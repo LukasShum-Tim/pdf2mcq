@@ -1,0 +1,7 @@
+streamlit
+pymupdf
+openai
+os
+tiktoken
+json
+googletrans
