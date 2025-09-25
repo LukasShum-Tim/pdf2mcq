@@ -8,7 +8,7 @@ import json
 from googletrans import Translator
 
 # Set your OpenAI API key securely
-client = openai.OpenAI(st.secrets["OPENAI_API_KEY"])
+client = st.secrets["OPENAI_API_KEY"]
 translator = Translator()
 
 # -------- PDF & Text Utilities --------
