@@ -1,5 +1,4 @@
 pymupdf
 openai
 tiktoken
-json
 googletrans
