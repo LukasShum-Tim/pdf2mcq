@@ -38,8 +38,9 @@ def split_text_into_chunks(text, max_tokens=2500):
 
 def generate_mcqs(text, total_questions=5):
     prompt = f"""
-You are a helpful assistant that generates multiple-choice questions (MCQs) strictly based on the provided text.
-If the text refers to case numbers, do not add that information in the questions.
+You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
+Your target audience consists of medical students and residents.
+If the text refers to case numbers, do not add that information in the question stems.
 
 Generate exactly {total_questions} MCQs in this JSON format:
 [
