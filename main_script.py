@@ -39,7 +39,8 @@ def split_text_into_chunks(text, max_tokens=2500):
 def generate_mcqs(text, total_questions=5):
     prompt = f"""
 You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
-Your target audience consists of medical students and residents.
+Make the questions clinically relevant to target an audience of medical students and residents.
+Do NOT write specific questions on case details, such as asking about a patient's blood pressure.
 If the text refers to case numbers, do not add that information in the question stems.
 
 Generate exactly {total_questions} MCQs in this JSON format:
@@ -147,6 +148,8 @@ language_map = {
     "English": "en",
     "Spanish": "es",
     "French": "fr",
+    "Ukrainian": "uk",
+    "Russian": "ru",
     "German": "de",
     "Polish": "po",
     "Arabic": "ar",
