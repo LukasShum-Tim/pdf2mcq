@@ -39,7 +39,7 @@ def split_text_into_chunks(text, max_tokens=2500):
 def generate_mcqs(text, total_questions=5):
     prompt = f"""
 You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
-Make the questions clinically relevant to target an audience of medical students and residents.
+Make the questions clinically relevant to target an audience of medical students and residents, Royal College of Physicians and Surgeons of Canada style.
 Do NOT write specific questions on case details, such as asking about a patient's blood pressure.
 If the text refers to case numbers, do not add that information in the question stems.
 
@@ -67,7 +67,7 @@ TEXT:
 """
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0
         )
