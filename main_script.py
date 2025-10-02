@@ -151,7 +151,7 @@ language_map = {
     "Ukrainian": "uk",
     "Russian": "ru",
     "German": "de",
-    "Polish": "po",
+    "Polish": "pl",
     "Arabic": "ar",
     "Chinese": "zh-cn",
     "Hindi": "hi"
