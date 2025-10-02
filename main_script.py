@@ -92,7 +92,7 @@ Return only the translated JSON.
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model="gpt-4.1-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
         )
