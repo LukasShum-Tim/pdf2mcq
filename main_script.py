@@ -17,22 +17,6 @@ def extract_text_from_pdf(file_obj):
     doc = fitz.open(stream=file_obj.read(), filetype="pdf")
     return "\n".join([page.get_text() for page in doc])
 
-def split_text_into_chunks(text, max_tokens=2500):
-    enc = tiktoken.get_encoding("cl100k_base")
-    words = text.split()
-    chunks, current_chunk = [], []
-
-    for word in words:
-        current_chunk.append(word)
-        tokens = len(enc.encode(" ".join(current_chunk)))
-        if tokens >= max_tokens:
-            chunks.append(" ".join(current_chunk))
-            current_chunk = []
-
-    if current_chunk:
-        chunks.append(" ".join(current_chunk))
-
-    return chunks
 
 # -------- GPT-Based MCQ Generation --------
 
@@ -67,7 +51,7 @@ TEXT:
 """
     try:
         response = client.chat.completions.create(
-            model="gpt-4.1-2025-04-14",
+            model="gpt-4.1-mini-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7
         )
@@ -92,7 +76,7 @@ Return only the translated JSON.
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4.1-2025-04-14",
+            model="gpt-4.1-mini-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7
         )
@@ -174,13 +158,12 @@ if uploaded_file:
     total_questions = st.slider("🔢 Total number of MCQs to generate", 1, 20, 5)
 
     if st.button("🧠 Generate Quiz"):
-        chunks = split_text_into_chunks(extracted_text)
-        first_chunk = chunks[0] if chunks else extracted_text
-
+        full_text = extracted_text
+    
         with st.spinner("Generating questions..."):
-            mcqs = generate_mcqs(first_chunk, total_questions)
+            mcqs = generate_mcqs(full_text, total_questions)
             st.session_state["original_mcqs"] = mcqs
-
+    
         if mcqs:
             with st.spinner(f"Translating to {target_language_name}..."):
                 translated_mcqs = translate_mcqs(mcqs, target_language_code)
