@@ -24,6 +24,8 @@ def generate_mcqs(text, total_questions=5):
     prompt = f"""
 You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
 Make the questions clinically relevant to target an audience of medical students and residents, Royal College of Physicians and Surgeons of Canada style.
+Ensure the questions are **proportional across the manual**, covering all major topics.
+Focus on clinical relevance, and if surgical content exists, include surgical presentation, approach, and management.
 Do NOT write specific questions on case details, such as asking about a patient's blood pressure.
 If the text refers to case numbers, do not add that information in the question stems.
 
