@@ -204,7 +204,7 @@ target_language_name = st.selectbox("Translate quiz to:", language_options, inde
 target_language_code = language_map[target_language_name]
 
 # File upload
-uploaded_file = st.file_uploader("📤 Upload your PDF file", type=["pdf"])
+uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"])
 
 if uploaded_file:
     st.success("✅ PDF uploaded successfully.")
