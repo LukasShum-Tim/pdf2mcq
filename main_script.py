@@ -17,6 +17,25 @@ def extract_text_from_pdf(file_obj):
     doc = fitz.open(stream=file_obj.read(), filetype="pdf")
     return "\n".join([page.get_text() for page in doc])
 
+# -------- GPT-Based MCQ Generation --------
+
+def shuffle_options(mcq):
+    """Shuffle the answer options and update the correct answer's key."""
+    options = mcq['options']
+    correct_answer = mcq['answer']
+    
+    # Shuffle options
+    shuffled_options = list(options.items())
+    random.shuffle(shuffled_options)
+    
+    # Update the answer key to reflect the shuffled order
+    new_options = {k: v for k, v in shuffled_options}
+    new_correct_answer = next(k for k, v in new_options.items() if v == options[correct_answer])
+    
+    # Return the shuffled options and the new correct answer
+    mcq['options'] = new_options
+    mcq['answer'] = new_correct_answer
+    return mcq
 
 # -------- GPT-Based MCQ Generation --------
 
@@ -30,26 +49,12 @@ Do NOT write specific questions on case details, such as asking about a patient'
 If the text refers to case numbers, do not add that information in the question stems.
 
 Generate exactly {total_questions} MCQs in this JSON format:
-[
-  {{
-    "question": "What is ...?",
-    "options": {{
-      "A": "Option A",
-      "B": "Option B",
-      "C": "Option C",
-      "D": "Option D"
-    }},
-    "answer": "A"
-  }},
-  ...
-]
+[{{"question": "What is ...?", "options": {{"A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D"}}, "answer": "A"}}, ...]
 
 ⚠️ Return ONLY valid JSON. No explanation or markdown.
 
 TEXT:
-\"\"\"
-{text}
-\"\"\"
+\"\"\"{text}\"\"\"
 """
     try:
         response = client.chat.completions.create(
@@ -57,10 +62,17 @@ TEXT:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7
         )
-        return json.loads(response.choices[0].message.content)
+        mcqs = json.loads(response.choices[0].message.content)
+        
+        # Shuffle options for each MCQ
+        for mcq in mcqs:
+            mcq = shuffle_options(mcq)
+
+        return mcqs
     except Exception as e:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
         return []
+
 
 # -------- Translation (GPT + Google Fallback) --------
 
@@ -82,8 +94,13 @@ Return only the translated JSON.
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7
         )
-        return json.loads(response.choices[0].message.content)
+        translated_mcqs = json.loads(response.choices[0].message.content)
 
+        # After translation, shuffle options in the same way to keep the answer key intact
+        for mcq in translated_mcqs:
+            mcq = shuffle_options(mcq)
+
+        return translated_mcqs
     except Exception as e:
         st.warning(f"⚠️ GPT translation failed: {e}")
         st.info("🔁 Falling back to Google Translate...")
@@ -99,6 +116,11 @@ Return only the translated JSON.
                     "answer": item["answer"]  # keep original answer key (A/B/C/D)
                 }
                 translated_mcqs.append(translated_item)
+
+            # Shuffle options after translation
+            for item in translated_mcqs:
+                item = shuffle_options(item)
+
             return translated_mcqs
         except Exception as ge:
             st.error(f"❌ Google Translate failed: {ge}")
