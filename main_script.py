@@ -238,49 +238,49 @@ if st.session_state.get("translated_mcqs"):
 
     bilingual_mode = target_language_name != "English"
 
-    with st.form("quiz_form"):
-        st.header("📝 Take the Quiz")
+with st.form("quiz_form"):
+    st.header("📝 Take the Quiz")
 
-        for idx, mcq in enumerate(translated_mcqs):
-            # Show bilingual question if non-English selected
-            if bilingual_mode:
-                st.markdown(f"### Q{idx + 1}: {mcq['question']}")
-                st.caption(f"**English:** {original_mcqs[idx]['question']}")
-            else:
-                st.subheader(f"Q{idx + 1}: {mcq['question']}")
+    bilingual_mode = target_language_name != "English"
 
-            # Always display options in A–D order
-            options = mcq["options"]
-            ordered_options = [options[k] for k in sorted(options.keys())]
+    for idx, mcq in enumerate(translated_mcqs):
+        if bilingual_mode:
+            st.markdown(f"### Q{idx + 1}: {mcq['question']}")
+            st.caption(f"**English:** {original_mcqs[idx]['question']}")
+        else:
+            st.subheader(f"Q{idx + 1}: {mcq['question']}")
 
-            # If bilingual, show English version below each translated option
-            if bilingual_mode:
-                english_options = original_mcqs[idx]["options"]
-                bilingual_labels = [
-                    f"{opt}<br><span style='color:gray;font-size:0.9em'>({english_options[k]})</span>"
-                    for k, opt in sorted(options.items())
-                ]
-                selected_text = st.radio(
-                    "Choose an answer:",
-                    ordered_options,
-                    key=f"q{idx}",
-                    format_func=lambda x: next(
-                        lbl for lbl, val in zip(bilingual_labels, ordered_options) if val == x
-                    ),
-                    label_visibility="collapsed"
-                )
-            else:
-                selected_text = st.radio(
-                    "Choose an answer:",
-                    ordered_options,
-                    key=f"q{idx}"
-                )
+        options = mcq["options"]
+        ordered_keys = sorted(options.keys())
 
+        if bilingual_mode:
+            english_opts = original_mcqs[idx]["options"]
+            bilingual_opts = []
+            for k in ordered_keys:
+                translated = options[k]
+                english = english_opts[k]
+                bilingual_opts.append(f"{translated}  \n*EN: {english}*")
+            selected_text = st.radio(
+                "Choose an answer:",
+                bilingual_opts,
+                key=f"q{idx}"
+            )
+
+            # Match the selected_text to its corresponding letter
+            selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
+        else:
+            ordered_options = [options[k] for k in ordered_keys]
+            selected_text = st.radio(
+                "Choose an answer:",
+                ordered_options,
+                key=f"q{idx}"
+            )
             selected_letter = next(k for k, v in options.items() if v == selected_text)
-            user_answers.append(selected_letter)
-            st.markdown("---")
 
-        submitted = st.form_submit_button("✅ Submit Quiz")
+        user_answers.append(selected_letter)
+        st.markdown("---")
+
+    submitted = st.form_submit_button("✅ Submit Quiz")
 
     if submitted:
         score, results = score_quiz(
