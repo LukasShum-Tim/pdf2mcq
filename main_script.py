@@ -99,7 +99,7 @@ async def translate_with_google(mcqs, language):
 
 
 def translate_mcqs(mcqs, language):
-    if language == "English":
+    if language == "en":
         return mcqs
 
     prompt = f"""
