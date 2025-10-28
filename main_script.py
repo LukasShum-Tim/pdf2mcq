@@ -7,6 +7,7 @@ import tiktoken
 import json
 from googletrans import Translator
 import random
+import asyncio
 
 # Set your OpenAI API key securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -77,6 +78,22 @@ TEXT:
 
 # -------- Translation (GPT + Google Fallback) --------
 
+async def translate_with_google(mcqs, language):
+    """Use Google Translate to translate MCQs asynchronously."""
+    translator = Translator()
+    translated_mcqs = []
+    for item in mcqs:
+        translated_item = {
+            "question": (await translator.translate(item["question"], dest=language)).text,
+            "options": {
+                k: (await translator.translate(v, dest=language)).text for k, v in item["options"].items()
+            },
+            "answer": item["answer"]  # keep original answer key (A/B/C/D)
+        }
+        translated_mcqs.append(translated_item)
+    return translated_mcqs
+
+
 def translate_mcqs(mcqs, language):
     if language == "English":
         return mcqs
@@ -97,32 +114,30 @@ Return only the translated JSON.
         )
         translated_mcqs = json.loads(response.choices[0].message.content)
 
+        # Check if GPT returned valid MCQs
+        if not translated_mcqs:
+            raise ValueError("GPT returned empty response")
+
         # After translation, shuffle options in the same way to keep the answer key intact
         for mcq in translated_mcqs:
             mcq = shuffle_options(mcq)
 
         return translated_mcqs
+
     except Exception as e:
         st.warning(f"⚠️ GPT translation failed: {e}")
         st.info("🔁 Falling back to Google Translate...")
 
+        # Fallback to Google Translate asynchronously
         try:
-            translated_mcqs = []
-            for item in mcqs:
-                translated_item = {
-                    "question": translator.translate(item["question"], dest=language).text,
-                    "options": {
-                        k: translator.translate(v, dest=language).text for k, v in item["options"].items()
-                    },
-                    "answer": item["answer"]  # keep original answer key (A/B/C/D)
-                }
-                translated_mcqs.append(translated_item)
-
+            translated_mcqs = asyncio.run(translate_with_google(mcqs, language))
+            
             # Shuffle options after translation
             for item in translated_mcqs:
                 item = shuffle_options(item)
 
             return translated_mcqs
+
         except Exception as ge:
             st.error(f"❌ Google Translate failed: {ge}")
             return mcqs
