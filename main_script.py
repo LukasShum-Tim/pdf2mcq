@@ -232,23 +232,50 @@ if uploaded_file:
 
 # Quiz form
 if st.session_state.get("translated_mcqs"):
-    mcqs = st.session_state["translated_mcqs"]
+    translated_mcqs = st.session_state["translated_mcqs"]
     original_mcqs = st.session_state["original_mcqs"]
     user_answers = []
+
+    bilingual_mode = target_language_name != "English"
 
     with st.form("quiz_form"):
         st.header("📝 Take the Quiz")
 
-        for idx, mcq in enumerate(mcqs):
-            st.subheader(f"Q{idx + 1}: {mcq['question']}")
+        for idx, mcq in enumerate(translated_mcqs):
+            # Show bilingual question if non-English selected
+            if bilingual_mode:
+                st.markdown(f"### Q{idx + 1}: {mcq['question']}")
+                st.caption(f"**English:** {original_mcqs[idx]['question']}")
+            else:
+                st.subheader(f"Q{idx + 1}: {mcq['question']}")
+
+            # Always display options in A–D order
             options = mcq["options"]
             ordered_options = [options[k] for k in sorted(options.keys())]
 
-            selected_text = st.radio(
-                "Choose an answer:",
-                ordered_options,
-                key=f"q{idx}"
-            )
+            # If bilingual, show English version below each translated option
+            if bilingual_mode:
+                english_options = original_mcqs[idx]["options"]
+                bilingual_labels = [
+                    f"{opt}<br><span style='color:gray;font-size:0.9em'>({english_options[k]})</span>"
+                    for k, opt in sorted(options.items())
+                ]
+                selected_text = st.radio(
+                    "Choose an answer:",
+                    ordered_options,
+                    key=f"q{idx}",
+                    format_func=lambda x: next(
+                        lbl for lbl, val in zip(bilingual_labels, ordered_options) if val == x
+                    ),
+                    label_visibility="collapsed"
+                )
+            else:
+                selected_text = st.radio(
+                    "Choose an answer:",
+                    ordered_options,
+                    key=f"q{idx}"
+                )
+
             selected_letter = next(k for k, v in options.items() if v == selected_text)
             user_answers.append(selected_letter)
             st.markdown("---")
@@ -256,17 +283,33 @@ if st.session_state.get("translated_mcqs"):
         submitted = st.form_submit_button("✅ Submit Quiz")
 
     if submitted:
-        score, results = score_quiz(user_answers, st.session_state["translated_mcqs"], st.session_state["original_mcqs"])
+        score, results = score_quiz(
+            user_answers,
+            translated_mcqs,
+            original_mcqs
+        )
         st.success(f"🎯 You scored {score} out of {len(results)}")
 
+        # -------- Feedback section --------
         with st.expander("📊 View Detailed Feedback"):
             for i, r in enumerate(results):
-                st.markdown(f"**Q{i+1}: {r['question']}**")
+                if bilingual_mode:
+                    st.markdown(f"### Q{i+1}: {r['question']}")
+                    st.caption(f"**English:** {r['english_question']}")
+                else:
+                    st.markdown(f"**Q{i+1}: {r['question']}**")
+
                 for letter, text in sorted(r['options'].items()):
                     if letter == r['correct']:
                         st.markdown(f"- ✅ **{letter}. {text}**")
+                        if bilingual_mode:
+                            st.caption(f"  **EN:** {r['english_options'][letter]}")
                     elif letter == r['selected']:
                         st.markdown(f"- ❌ {letter}. {text}")
+                        if bilingual_mode:
+                            st.caption(f"  **EN:** {r['english_options'][letter]}")
                     else:
                         st.markdown(f"- {letter}. {text}")
+                        if bilingual_mode:
+                            st.caption(f"  **EN:** {r['english_options'][letter]}")
                 st.markdown("---")
