@@ -148,21 +148,36 @@ Return only the translated JSON.
 
 # -------- Quiz Scoring --------
 
-def score_quiz(user_answers, original_mcqs):
+def score_quiz(user_answers, translated_mcqs, original_mcqs=None):
+    """
+    Scores the quiz based on the translated MCQs (the ones shown to the user).
+    Optionally, includes English reference if original_mcqs is provided.
+    """
     score = 0
     results = []
+
     for idx, user_ans in enumerate(user_answers):
-        correct = original_mcqs[idx]["answer"]
+        mcq = translated_mcqs[idx]
+        correct = mcq["answer"]
         is_correct = user_ans == correct
         if is_correct:
             score += 1
-        results.append({
-            "question": original_mcqs[idx]["question"],
+
+        result = {
+            "question": mcq["question"],
             "selected": user_ans,
             "correct": correct,
-            "options": original_mcqs[idx]["options"],
+            "options": mcq["options"],
             "is_correct": is_correct
-        })
+        }
+
+        # Optional: include English reference for bilingual review
+        if original_mcqs:
+            result["english_question"] = original_mcqs[idx]["question"]
+            result["english_options"] = original_mcqs[idx]["options"]
+
+        results.append(result)
+
     return score, results
 
 # -------- Streamlit App --------
@@ -241,7 +256,7 @@ if st.session_state.get("translated_mcqs"):
         submitted = st.form_submit_button("✅ Submit Quiz")
 
     if submitted:
-        score, results = score_quiz(user_answers, original_mcqs)
+        score, results = score_quiz(user_answers, st.session_state["translated_mcqs"], st.session_state["original_mcqs"])
         st.success(f"🎯 You scored {score} out of {len(results)}")
 
         with st.expander("📊 View Detailed Feedback"):
