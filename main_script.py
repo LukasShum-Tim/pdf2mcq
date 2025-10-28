@@ -227,9 +227,11 @@ if st.session_state.get("translated_mcqs"):
         for idx, mcq in enumerate(mcqs):
             st.subheader(f"Q{idx + 1}: {mcq['question']}")
             options = mcq["options"]
+            ordered_options = [options[k] for k in sorted(options.keys())]
+
             selected_text = st.radio(
                 "Choose an answer:",
-                list(options.values()),
+                ordered_options,
                 key=f"q{idx}"
             )
             selected_letter = next(k for k, v in options.items() if v == selected_text)
