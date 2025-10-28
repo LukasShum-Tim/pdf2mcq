@@ -8,6 +8,7 @@ import json
 from googletrans import Translator
 import random
 import asyncio
+import string
 
 # Set your OpenAI API key securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -22,21 +23,24 @@ def extract_text_from_pdf(file_obj):
 # -------- GPT-Based MCQ Generation --------
 
 def shuffle_options(mcq):
-    """Shuffle the answer options and update the correct answer's key."""
+    """Shuffle the options' *values*, but reassign them back to keys A–D in order."""
     options = mcq['options']
-    correct_answer = mcq['answer']
-    
-    # Shuffle options
-    shuffled_options = list(options.items())
-    random.shuffle(shuffled_options)
-    
-    # Update the answer key to reflect the shuffled order
-    new_options = {k: v for k, v in shuffled_options}
-    new_correct_answer = next(k for k, v in new_options.items() if v == options[correct_answer])
-    
-    # Return the shuffled options and the new correct answer
+    correct_letter = mcq['answer']
+    correct_text = options[correct_letter]
+
+    # Shuffle only the option texts (not the keys)
+    shuffled_texts = list(options.values())
+    random.shuffle(shuffled_texts)
+
+    # Reassign shuffled texts to new keys A–D
+    new_letters = list(string.ascii_uppercase[:len(shuffled_texts)])
+    new_options = {letter: text for letter, text in zip(new_letters, shuffled_texts)}
+
+    # Find which new letter now holds the original correct text
+    new_correct_letter = next(letter for letter, text in new_options.items() if text == correct_text)
+
     mcq['options'] = new_options
-    mcq['answer'] = new_correct_answer
+    mcq['answer'] = new_correct_letter
     return mcq
 
 # -------- GPT-Based MCQ Generation --------
@@ -241,7 +245,7 @@ if st.session_state.get("translated_mcqs"):
         with st.expander("📊 View Detailed Feedback"):
             for i, r in enumerate(results):
                 st.markdown(f"**Q{i+1}: {r['question']}**")
-                for letter, text in r['options'].items():
+                for letter, text in sorted(r['options'].items()):
                     if letter == r['correct']:
                         st.markdown(f"- ✅ **{letter}. {text}**")
                     elif letter == r['selected']:
