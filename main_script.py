@@ -6,6 +6,7 @@ import os
 import tiktoken
 import json
 from googletrans import Translator
+import random
 
 # Set your OpenAI API key securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
