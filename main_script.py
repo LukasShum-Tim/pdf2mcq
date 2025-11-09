@@ -77,57 +77,78 @@ TEXT:
 
 # -------- Translation (GPT + Google Fallback) --------
 
-async def translate_with_google(mcqs, language):
+def translate_text_gpt(text, language_code):
+    """Translate plain text using GPT, output as simple text."""
+    try:
+        # Include both name and code to ensure clarity for the model
+        prompt = f"Translate the following text into the language corresponding to code '{language_code}'. Do not include explanations, only the translation:\n\n{text}"
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini-2025-04-14",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        content = response.choices[0].message.content
+        if not content:
+            raise ValueError("Empty response from GPT translation")
+        return content.strip()
+    except Exception as e:
+        st.warning(f"⚠️ GPT translation failed for text: {e}")
+        return None
+
+
+async def translate_with_google(mcqs, language_code):
     """Use Google Translate to translate MCQs asynchronously."""
     translator = Translator()
     translated_mcqs = []
     for item in mcqs:
         translated_item = {
-            "question": (await translator.translate(item["question"], dest=language)).text,
+            "question": (await translator.translate(item["question"], dest=language_code)).text,
             "options": {
-                k: (await translator.translate(v, dest=language)).text for k, v in item["options"].items()
+                k: (await translator.translate(v, dest=language_code)).text for k, v in item["options"].items()
             },
-            "answer": item["answer"]  # keep original answer key (A/B/C/D)
+            "answer": item["answer"]
         }
         translated_mcqs.append(translated_item)
     return translated_mcqs
 
 
-def translate_mcqs(mcqs, language):
-    if language == "en":
+def translate_mcqs(mcqs, language_code):
+    """Translate all MCQs using GPT, with Google fallback."""
+    if language_code == "en":
         return mcqs
 
     translated_mcqs = []
-    for mcq in mcqs:
-        prompt = f"""
-Translate the following multiple-choice question into {target_language_name}. 
-Do not change the question order, options order, or answer key.
-Return only valid JSON in the same structure.
 
-{json.dumps(mcq, ensure_ascii=False, indent=2)}
-"""
+    try:
+        for mcq in mcqs:
+            question_translated = translate_text_gpt(mcq["question"], language_code)
+            if not question_translated:
+                raise ValueError("Empty GPT translation")
+
+            translated_options = {}
+            for k, v in mcq["options"].items():
+                option_translated = translate_text_gpt(v, language_code)
+                if not option_translated:
+                    raise ValueError("Empty GPT translation for option")
+                translated_options[k] = option_translated
+
+            translated_mcqs.append({
+                "question": question_translated,
+                "options": translated_options,
+                "answer": mcq["answer"]
+            })
+
+        return translated_mcqs
+
+    except Exception as e:
+        st.warning(f"⚠️ GPT translation failed: {e}")
+        st.info("🔁 Falling back to Google Translate...")
         try:
-            response = client.chat.completions.create(
-                model="gpt-4.1-mini-2025-04-14",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3
-            )
-            translated_item = json.loads(response.choices[0].message.content)
-            translated_mcqs.append(translated_item)
-        except Exception as e:
-            st.warning(f"⚠️ GPT translation failed: {e}")
-            st.info("🔁 Falling back to Google Translate...")
-    
-            # Fallback to Google Translate asynchronously
-            try:
-                translated_mcqs = asyncio.run(translate_with_google(mcqs, language))
-                return translated_mcqs
-    
-            except Exception as ge:
-                st.error(f"❌ Google Translate failed: {ge}")
-                return mcqs
-
-    return translated_mcqs
+            translated_mcqs = asyncio.run(translate_with_google(mcqs, language_code))
+            return translated_mcqs
+        except Exception as ge:
+            st.error(f"❌ Google Translate failed: {ge}")
+            return mcqs
 
 
 
