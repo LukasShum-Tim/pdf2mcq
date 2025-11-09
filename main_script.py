@@ -69,11 +69,6 @@ TEXT:
             temperature=0.7
         )
         mcqs = json.loads(response.choices[0].message.content)
-        
-        # Shuffle options for each MCQ
-        for mcq in mcqs:
-            mcq = shuffle_options(mcq)
-
         return mcqs
     except Exception as e:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
@@ -133,11 +128,6 @@ Return only valid JSON in the same structure.
         # Fallback to Google Translate asynchronously
         try:
             translated_mcqs = asyncio.run(translate_with_google(mcqs, language))
-            
-            # Shuffle options after translation
-            for item in translated_mcqs:
-                item = shuffle_options(item)
-
             return translated_mcqs
 
         except Exception as ge:
