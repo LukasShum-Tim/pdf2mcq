@@ -115,24 +115,21 @@ Return only valid JSON in the same structure.
             translated_item = json.loads(response.choices[0].message.content)
             translated_mcqs.append(translated_item)
         except Exception as e:
-            st.warning(f"⚠️ GPT translation failed for one MCQ: {e}")
-            # fallback to original English version for that one
-            translated_mcqs.append(mcq)
+            st.warning(f"⚠️ GPT translation failed: {e}")
+            st.info("🔁 Falling back to Google Translate...")
+    
+            # Fallback to Google Translate asynchronously
+            try:
+                translated_mcqs = asyncio.run(translate_with_google(mcqs, language))
+                return translated_mcqs
+    
+            except Exception as ge:
+                st.error(f"❌ Google Translate failed: {ge}")
+                return mcqs
 
     return translated_mcqs
 
-    except Exception as e:
-        st.warning(f"⚠️ GPT translation failed: {e}")
-        st.info("🔁 Falling back to Google Translate...")
 
-        # Fallback to Google Translate asynchronously
-        try:
-            translated_mcqs = asyncio.run(translate_with_google(mcqs, language))
-            return translated_mcqs
-
-        except Exception as ge:
-            st.error(f"❌ Google Translate failed: {ge}")
-            return mcqs
 
 # -------- Quiz Scoring --------
 
