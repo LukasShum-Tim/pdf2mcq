@@ -100,7 +100,7 @@ def translate_mcqs(mcqs, language):
     translated_mcqs = []
     for mcq in mcqs:
         prompt = f"""
-Translate the following multiple-choice question into {language}. 
+Translate the following multiple-choice question into {target_language_code}. 
 Do not change the question order, options order, or answer key.
 Return only valid JSON in the same structure.
 
