@@ -102,31 +102,29 @@ def translate_mcqs(mcqs, language):
     if language == "en":
         return mcqs
 
-    prompt = f"""
-Translate the following multiple-choice questions into {language}, preserving the JSON structure:
+    translated_mcqs = []
+    for mcq in mcqs:
+        prompt = f"""
+Translate the following multiple-choice question into {language}. 
+Do not change the question order, options order, or answer key.
+Return only valid JSON in the same structure.
 
-{json.dumps(mcqs, indent=2)}
-
-Return only the translated JSON.
+{json.dumps(mcq, ensure_ascii=False, indent=2)}
 """
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4.1-mini-2025-04-14",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3
+            )
+            translated_item = json.loads(response.choices[0].message.content)
+            translated_mcqs.append(translated_item)
+        except Exception as e:
+            st.warning(f"⚠️ GPT translation failed for one MCQ: {e}")
+            # fallback to original English version for that one
+            translated_mcqs.append(mcq)
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4.1-mini-2025-04-14",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-        translated_mcqs = json.loads(response.choices[0].message.content)
-
-        # Check if GPT returned valid MCQs
-        if not translated_mcqs:
-            raise ValueError("GPT returned empty response")
-
-        # After translation, shuffle options in the same way to keep the answer key intact
-        for mcq in translated_mcqs:
-            mcq = shuffle_options(mcq)
-
-        return translated_mcqs
+    return translated_mcqs
 
     except Exception as e:
         st.warning(f"⚠️ GPT translation failed: {e}")
