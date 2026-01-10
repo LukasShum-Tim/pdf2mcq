@@ -87,7 +87,19 @@ If the text refers to case numbers, do not add that information in the question 
 Each question MUST be tagged with ONE main topic.
 
 Generate exactly {total_questions} MCQs in this JSON format:
-[{{"question": "What is ...?", "options": {{"A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D"}}, "answer": "A"}},"topic": "Pulmonary Embolism" ...]
+[
+  {
+    "question": "What is ...?",
+    "options": {
+      "A": "Option A",
+      "B": "Option B",
+      "C": "Option C",
+      "D": "Option D"
+    },
+    "answer": "A",
+    "topic": "Pulmonary Embolism"
+  }
+]
 
 ⚠️ Return ONLY valid JSON. No explanation or markdown.
 
@@ -105,9 +117,6 @@ TEXT:
     except Exception as e:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
         return []
-
-for mcq in mcqs:
-    st.session_state["used_topics"].add(mcq["topic"])
 
 # -------- Translation (GPT + Google Fallback) --------
 
@@ -262,6 +271,9 @@ if uploaded_file:
 
 if st.button("🧠 Generate Quiz"):
     full_text = extracted_text
+    if mcqs:
+        for mcq in mcqs:
+            st.session_state["used_topics"].add(mcq["topic"])
 
     with st.spinner("Generating questions..."):
         mcqs = generate_mcqs(full_text, total_questions)
