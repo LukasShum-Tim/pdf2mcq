@@ -273,20 +273,20 @@ if uploaded_file:
         st.session_state["topics"] = extract_topics(extracted_text)
         st.session_state["used_topics"] = set()
 
-    if st.button("🧠 Generate Quiz"):
-        full_text = extracted_text
-    
-        with st.spinner("Generating questions..."):
-            mcqs = generate_mcqs(full_text, total_questions)
-            st.session_state["original_mcqs"] = mcqs
-    
-        # ✅ update used topics AFTER generation
-        for mcq in mcqs:
-            st.session_state["used_topics"].add(mcq["topic"])
+if st.button("🧠 Generate Quiz"):
+    full_text = extracted_text
 
-        if mcqs:
-            with st.spinner(f"Translating to {target_language_name}..."):
-                translated_mcqs = translate_mcqs(mcqs, target_language_code)
+    with st.spinner("Generating questions..."):
+        mcqs = generate_mcqs(full_text, total_questions)
+        st.session_state["original_mcqs"] = mcqs
+
+    # ✅ update used topics AFTER generation
+    for mcq in mcqs:
+        st.session_state["used_topics"].add(mcq["topic"])
+
+    if mcqs:
+        with st.spinner(f"Translating to {target_language_name}..."):
+            translated_mcqs = translate_mcqs(mcqs, target_language_code)
 
             # ✅ Shuffle both English and translated MCQs together
             def shuffle_mcq_pair(eng_mcq, trans_mcq):
