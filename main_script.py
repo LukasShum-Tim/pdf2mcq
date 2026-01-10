@@ -110,13 +110,13 @@ TEXT:
 """
     try:
         response = client.chat.completions.create(
-            model="gpt-4.1-mini-2025-04-14",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            response_format={"type": "json_object"}
-        )
-        data = response.choices[0].message.parsed
-        return data["mcqs"]
+        model="gpt-4.1-mini-2025-04-14",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7
+    )
+    
+    raw = response.choices[0].message.content
+    data = json.loads(raw)
         
     except Exception as e:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
@@ -273,16 +273,16 @@ if uploaded_file:
         st.session_state["topics"] = extract_topics(extracted_text)
         st.session_state["used_topics"] = set()
 
-if st.button("🧠 Generate Quiz"):
-    full_text = extracted_text
-
-    with st.spinner("Generating questions..."):
-        mcqs = generate_mcqs(full_text, total_questions)
-        st.session_state["original_mcqs"] = mcqs
-
-    # ✅ update used topics AFTER generation
-    for mcq in mcqs:
-        st.session_state["used_topics"].add(mcq["topic"])
+    if st.button("🧠 Generate Quiz"):
+        full_text = extracted_text
+    
+        with st.spinner("Generating questions..."):
+            mcqs = generate_mcqs(full_text, total_questions)
+            st.session_state["original_mcqs"] = mcqs
+    
+        # ✅ update used topics AFTER generation
+        for mcq in mcqs:
+            st.session_state["used_topics"].add(mcq["topic"])
 
     if mcqs:
         with st.spinner(f"Translating to {target_language_name}..."):
