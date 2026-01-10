@@ -67,6 +67,34 @@ def shuffle_options(mcq):
     mcq['answer'] = new_correct_letter
     return mcq
 
+def shuffle_mcqs_pairwise(mcqs, translated_mcqs):
+    synced_eng, synced_trans = [], []
+
+    for eng_mcq, trans_mcq in zip(mcqs, translated_mcqs):
+        options = eng_mcq["options"]
+        correct_letter = eng_mcq["answer"]
+        correct_text = options[correct_letter]
+
+        keys = list(options.keys())
+        random.shuffle(keys)
+
+        new_eng_opts = {}
+        new_trans_opts = {}
+        for new_letter, old_letter in zip(string.ascii_uppercase, keys):
+            new_eng_opts[new_letter] = eng_mcq["options"][old_letter]
+            new_trans_opts[new_letter] = trans_mcq["options"][old_letter]
+
+        new_correct = next(k for k, v in new_eng_opts.items() if v == correct_text)
+
+        eng_mcq["options"] = new_eng_opts
+        trans_mcq["options"] = new_trans_opts
+        eng_mcq["answer"] = trans_mcq["answer"] = new_correct
+
+        synced_eng.append(eng_mcq)
+        synced_trans.append(trans_mcq)
+
+    return synced_eng, synced_trans
+
 # -------- GPT-Based MCQ Generation --------
 
 def generate_mcqs(text, total_questions=5, preferred_topics=None):
@@ -425,32 +453,36 @@ if st.session_state.get("translated_mcqs"):
 if submitted:
     if st.button("🔄 Generate New Questions"):
         st.session_state["regen"] = True
-        all_topics = set(st.session_state["topics"])
-        used_topics = st.session_state["used_topics"]
-    
-        remaining_topics = list(all_topics - used_topics)
-    
-        # If everything has been covered, allow repetition
-        preferred_topics = remaining_topics if remaining_topics else None
-    
-        with st.spinner("Generating new questions..."):
-            mcqs = generate_mcqs(
-                st.session_state["extracted_text"],
-                total_questions=total_questions,
-                preferred_topics=preferred_topics
-            )
-    
-        # Update used topics
-        for mcq in mcqs:
-            st.session_state["used_topics"].add(mcq["topic"])
-    
-        if st.session_state["regen"]:
-            mcqs = generate_mcqs(
-                st.session_state["extracted_text"],
-                total_questions=total_questions,
-                preferred_topics=preferred_topics
-            )
-        
+
+# Handle regeneration
+if st.session_state.get("regen"):
+
+    all_topics = set(st.session_state["topics"])
+    used_topics = st.session_state["used_topics"]
+
+    remaining_topics = list(all_topics - used_topics)
+    preferred_topics = remaining_topics if remaining_topics else None
+
+    with st.spinner("Generating new questions..."):
+        # Generate new MCQs
+        mcqs = generate_mcqs(
+            st.session_state["extracted_text"],
+            total_questions=total_questions,
+            preferred_topics=preferred_topics
+        )
+
+    # Update used topics
+    for mcq in mcqs:
+        st.session_state["used_topics"].add(mcq["topic"])
+
+    if mcqs:
+        with st.spinner(f"Translating to {target_language_name}..."):
+            translated_mcqs = translate_mcqs(mcqs, target_language_code)
+
+            # ✅ Shuffle English + translated MCQs together
+            mcqs, translated_mcqs = shuffle_mcqs_pairwise(mcqs, translated_mcqs)
+
             st.session_state["original_mcqs"] = mcqs
-            st.session_state["translated_mcqs"] = translate_mcqs(mcqs, target_language_code)
-            st.session_state["regen"] = False
+            st.session_state["translated_mcqs"] = translated_mcqs
+
+    st.session_state["regen"] = False
