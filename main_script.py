@@ -101,7 +101,7 @@ Generate exactly {total_questions} MCQs in this JSON format:
   }
 ]
 
-⚠️ Return ONLY valid JSON. No explanation or markdown.
+⚠️ Return a JSON array of MCQs. Do not include any text outside the JSON.
 
 TEXT:
 \"\"\"{text}\"\"\"
@@ -111,6 +111,7 @@ TEXT:
             model="gpt-4.1-mini-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7
+            response_format={"type": "json_object"}
         )
         mcqs = json.loads(response.choices[0].message.content)
         return mcqs
@@ -271,13 +272,14 @@ if uploaded_file:
 
 if st.button("🧠 Generate Quiz"):
     full_text = extracted_text
-    if "original_mcqs" in st.session_state:
-        for mcq in mcqs:
-            st.session_state["used_topics"].add(mcq["topic"])
 
     with st.spinner("Generating questions..."):
         mcqs = generate_mcqs(full_text, total_questions)
         st.session_state["original_mcqs"] = mcqs
+
+    # ✅ update used topics AFTER generation
+    for mcq in mcqs:
+        st.session_state["used_topics"].add(mcq["topic"])
 
     if mcqs:
         with st.spinner(f"Translating to {target_language_name}..."):
