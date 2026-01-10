@@ -271,7 +271,7 @@ if uploaded_file:
 
 if st.button("🧠 Generate Quiz"):
     full_text = extracted_text
-    if mcqs:
+    if "original_mcqs" in st.session_state:
         for mcq in mcqs:
             st.session_state["used_topics"].add(mcq["topic"])
 
