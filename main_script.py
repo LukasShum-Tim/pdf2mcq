@@ -307,8 +307,8 @@ st.session_state["target_language_code"] = target_language_code
 #Building the quiz
 def build_quiz(preferred_topics=None):
     for k in list(st.session_state.keys()):
-    if k.startswith("q_"):
-        del st.session_state[k]
+        if k.startswith("q_"):
+            del st.session_state[k]
         
     mcqs = generate_mcqs(
         st.session_state["extracted_text"],
