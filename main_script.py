@@ -302,6 +302,7 @@ language_map = {
 language_options = list(language_map.keys())
 target_language_name = st.selectbox("Translate quiz to:", language_options, index=0)
 target_language_code = language_map[target_language_name]
+st.session_state["target_language_code"] = target_language_code
 
 #Building the quiz
 def build_quiz(preferred_topics=None):
@@ -333,7 +334,11 @@ if uploaded_file:
     with st.expander("🔍 Preview Extracted Text"):
         st.text_area("Extracted Text", extracted_text[:1000] + "...", height=300)
 
-    total_questions = st.slider("🔢 Total number of MCQs to generate", 1, 20, 5)
+    st.session_state["total_questions"] = st.slider(
+        "🔢 Total number of MCQs to generate",
+        1, 20, 5,
+        key="total_questions"
+    )
     
     if "topics" not in st.session_state:
         st.session_state["topics"] = extract_topics(extracted_text)
