@@ -17,11 +17,10 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 translator = Translator()
 
 # Reusing the quiz
-if "regen" not in st.session_state:
-    st.session_state["regen"] = False
-
 if "quiz_version" not in st.session_state:
     st.session_state["quiz_version"] = 0
+
+generate_new_questions_button = False
 
 # -------- PDF & Text Utilities --------
 
