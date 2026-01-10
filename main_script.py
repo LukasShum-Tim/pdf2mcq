@@ -117,6 +117,7 @@ TEXT:
     
         raw = response.choices[0].message.content
         data = json.loads(raw)
+        return data["mcqs"]
         
     except Exception as e:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
