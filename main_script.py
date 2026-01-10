@@ -429,7 +429,7 @@ def build_quiz(preferred_topics=None):
     for mcq in mcqs:
         st.session_state["used_topics"].add(mcq["topic"])
 
-    if target_language_name is not "en":
+    if target_language_name != "en":
         update_progress(progress, status, 55, "Translating questions...")
             
     translated = translate_mcqs(mcqs, st.session_state["target_language_code"])
@@ -572,11 +572,48 @@ if st.session_state.get("show_generate_new"):
 
     url_instructors = "https://forms.gle/GdMqpvikomBRTcvJ6"
     url_students = "https://forms.gle/CWKRqptQhpdLKaj8A"
-    st.write("Thank you for trying this multilingual short answer question generator! Please click on the following links to provide feedback to help improve this tool:")
-    st.write(translate_text_gpt("Thank you for trying this multilingual short answer question generator! Please click on the following links to provide feedback to help improve this tool:"), language_code)
-    st.markdown("Feedback form for instructors:", translate_text_gpt("Feedback form for instructors:", language_code))
-    st.markdown(url_instructors)
-    st.markdown("Feedback form for students:", translate_text_gpt("Feedback form for students:", language_code))
-    st.markdown(url_students)
 
-#translate_text_gpt(text, language_code):
+    st.markdown("### 📝 Help Us Improve")
+
+    # Always show English
+    feedback_text_en = (
+    "Thank you for trying this multilingual short answer question generator! "
+    "Please click on the following links to provide feedback to help improve this tool:"
+    )
+    
+    feedback_instructors_en = "Feedback form for instructors:"
+    feedback_students_en = "Feedback form for students:"
+    st.write(feedback_text_en)
+
+    # Show translation only if non-English
+    if target_language_code != "en":
+        translated_feedback = translate_text_gpt(
+            feedback_text_en,
+            target_language_code
+        )
+        if translated_feedback:
+            st.write(translated_feedback)
+
+    st.markdown("---")
+
+    # Instructor feedback
+    st.markdown(f"**{feedback_instructors_en}**")
+    if target_language_code != "en":
+        st.caption(
+            translate_text_gpt(
+                feedback_instructors_en,
+                target_language_code
+            )
+        )
+    st.markdown(url_instructors)
+
+    # Student feedback
+    st.markdown(f"**{feedback_students_en}**")
+    if target_language_code != "en":
+        st.caption(
+            translate_text_gpt(
+                feedback_students_en,
+                target_language_code
+            )
+        )
+    st.markdown(url_students)
