@@ -20,7 +20,8 @@ translator = Translator()
 if "quiz_version" not in st.session_state:
     st.session_state["quiz_version"] = 0
 
-generate_new_questions_button = False
+if "show_generate_new" not in st.session_state:
+    st.session_state["show_generate_new"] = False
 
 # -------- PDF & Text Utilities --------
 
@@ -326,6 +327,7 @@ def build_quiz(preferred_topics=None):
     st.session_state["translated_mcqs"] = translated
     st.session_state["quiz_version"] += 1
     st.session_state["show_results"] = False
+    st.session_state["show_generate_new"] = False
 
 # File upload
 uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"])
@@ -402,7 +404,7 @@ if st.session_state.get("translated_mcqs"):
 
     if submitted:
         st.session_state["show_results"] = True
-        generate_new_questions_button = True
+        st.session_state["show_generate_new"] = True
         
     if st.session_state.get("show_results"):
         score, results = score_quiz(
@@ -437,7 +439,7 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 #Generate new questions
-if generate_new_questions_button == True:
+if st.session_state.get("show_generate_new"):
     if st.button("🔄 Generate New Questions"):
         all_topics = set(st.session_state["topics"])
         used = st.session_state["used_topics"]
