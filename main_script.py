@@ -438,7 +438,7 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 #Generate new questions
-if generate_new_questions_button:
+if generate_new_questions_button == True:
     if st.button("🔄 Generate New Questions"):
         all_topics = set(st.session_state["topics"])
         used = st.session_state["used_topics"]
