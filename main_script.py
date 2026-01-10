@@ -102,6 +102,10 @@ def shuffle_mcqs_pairwise(mcqs, translated_mcqs):
 
 # -------- GPT-Based MCQ Generation --------
 
+def update_progress(progress, status, value, message):
+    progress.progress(value)
+    status.markdown(f"⏳ **{message}**")
+
 def generate_mcqs(text, total_questions=5, preferred_topics=None, seed_token=None):
     topic_instruction = ""
     seed_token = seed_token or str(time.time())
@@ -306,28 +310,51 @@ st.session_state["target_language_code"] = target_language_code
 
 #Building the quiz
 def build_quiz(preferred_topics=None):
+    progress = st.progress(0)
+    status = st.empty()
+
+    update_progress(progress, status, 5, "Preparing quiz...")
+
+    # Clear old answers
     for k in list(st.session_state.keys()):
         if k.startswith("q_"):
             del st.session_state[k]
-        
+    
+    update_progress(progress, status, 15, "Generating questions with AI...")
+    
     mcqs = generate_mcqs(
         st.session_state["extracted_text"],
         total_questions=st.session_state["total_questions"],
         preferred_topics=preferred_topics,
         seed_token=str(time.time())
     )
-
+    update_progress(progress, status, 35, "Tracking covered topics...")
+    
     for mcq in mcqs:
         st.session_state["used_topics"].add(mcq["topic"])
 
+    if target_language_name is not "en":
+        update_progress(progress, status, 55, "Translating questions...")
+            
     translated = translate_mcqs(mcqs, st.session_state["target_language_code"])
+
+    update_progress(progress, status, 75, "Shuffling answer choices...")
+    
     mcqs, translated = shuffle_mcqs_pairwise(mcqs, translated)
 
+    update_progress(progress, status, 90, "Finalizing quiz...")
+    
     st.session_state["original_mcqs"] = mcqs
     st.session_state["translated_mcqs"] = translated
     st.session_state["quiz_version"] += 1
     st.session_state["show_results"] = False
     st.session_state["show_generate_new"] = False
+
+    update_progress(progress, status, 100, "Quiz ready!")
+
+    time.sleep(0.3)  # UX polish
+    progress.empty()
+    status.empty()
 
 # File upload
 uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"])
