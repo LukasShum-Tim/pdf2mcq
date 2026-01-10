@@ -443,5 +443,4 @@ if generate_new_questions_button == True:
         used = st.session_state["used_topics"]
         remaining = list(all_topics - used)
         build_quiz(preferred_topics=remaining if remaining else None)
-        generate_new_questions_button = False
         st.rerun()
