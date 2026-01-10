@@ -476,12 +476,10 @@ if uploaded_file:
         preferred_topics = remaining_topics if remaining_topics else None
 
         with st.spinner("Generating new questions..."):
-            seed_token = str(time.time())
             mcqs = generate_mcqs(
                 st.session_state["extracted_text"],
                 total_questions=total_questions,
-                preferred_topics=preferred_topics,
-                seed_token=seed_token
+                preferred_topics=preferred_topics
             )
 
         for mcq in mcqs:
@@ -493,11 +491,11 @@ if uploaded_file:
             st.session_state["original_mcqs"] = mcqs
             st.session_state["translated_mcqs"] = translated_mcqs
 
-        # ✅ Immediately rerun outside the form to refresh UI
+        # ✅ Safe rerun after updating session state
         st.experimental_rerun()
 
 
-# ------------------- Render Quiz Form (ONLY ONCE) -------------------
+# ------------------- Render Quiz Form -------------------
 if st.session_state.get("translated_mcqs"):
     translated_mcqs = st.session_state["translated_mcqs"]
     original_mcqs = st.session_state["original_mcqs"]
@@ -505,7 +503,8 @@ if st.session_state.get("translated_mcqs"):
 
     bilingual_mode = target_language_name != "English"
 
-    with st.form("quiz_form"):  # Only one form in the app
+    # ✅ Only one form in the script
+    with st.form("quiz_form"):
         st.header("📝 Take the Quiz")
 
         for idx, mcq in enumerate(translated_mcqs):
@@ -520,24 +519,14 @@ if st.session_state.get("translated_mcqs"):
 
             if bilingual_mode:
                 english_opts = original_mcqs[idx]["options"]
-                bilingual_opts = []
-                for k in ordered_keys:
-                    translated = options[k]
-                    english = english_opts[k]
-                    bilingual_opts.append(f"{translated}  \n*EN: {english}*")
-                selected_text = st.radio(
-                    "Choose an answer:",
-                    bilingual_opts,
-                    key=f"q{idx}"
-                )
+                bilingual_opts = [
+                    f"{options[k]}  \n*EN: {english_opts[k]}*" for k in ordered_keys
+                ]
+                selected_text = st.radio("Choose an answer:", bilingual_opts, key=f"q{idx}")
                 selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
             else:
                 ordered_options = [options[k] for k in ordered_keys]
-                selected_text = st.radio(
-                    "Choose an answer:",
-                    ordered_options,
-                    key=f"q{idx}"
-                )
+                selected_text = st.radio("Choose an answer:", ordered_options, key=f"q{idx}")
                 selected_letter = next(k for k, v in options.items() if v == selected_text)
 
             user_answers.append(selected_letter)
