@@ -366,6 +366,8 @@ if uploaded_file:
             st.error("❌ No MCQs were generated.")
 
 # Quiz form
+submitted = False
+
 if st.session_state.get("translated_mcqs"):
     translated_mcqs = st.session_state["translated_mcqs"]
     original_mcqs = st.session_state["original_mcqs"]
@@ -450,9 +452,11 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 #Generate new questions
-if submitted:
+if st.session_state.get("translated_mcqs") and submitted:
     if st.button("🔄 Generate New Questions"):
         st.session_state["regen"] = True
+else:
+    
 
 # Handle regeneration
 if st.session_state.get("regen"):
