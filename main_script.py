@@ -20,6 +20,26 @@ def extract_text_from_pdf(file_obj):
     doc = fitz.open(stream=file_obj.read(), filetype="pdf")
     return "\n".join([page.get_text() for page in doc])
 
+def extract_topics(text):
+    prompt = f"""
+You are analyzing a scientific or educational document.
+
+Extract all major high-level topics or themes covered in this text.
+Topics should be concise (1–4 words), non-overlapping, and clinically meaningful.
+
+Return ONLY valid JSON in this format:
+["Topic 1", "Topic 2", "Topic 3", ...]
+
+TEXT:
+\"\"\"{text[:12000]}\"\"\" 
+"""
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini-2025-04-14",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    return json.loads(response.choices[0].message.content)
+
 # -------- GPT-Based MCQ Generation --------
 
 def shuffle_options(mcq):
@@ -45,7 +65,16 @@ def shuffle_options(mcq):
 
 # -------- GPT-Based MCQ Generation --------
 
-def generate_mcqs(text, total_questions=5):
+def generate_mcqs(text, total_questions=5, preferred_topics=None):
+    topic_instruction = ""
+    if preferred_topics:
+        topic_instruction = f"""
+Prioritize generating questions from these topics:
+{', '.join(preferred_topics)}
+Avoid repeating previously used topics if possible.
+"""
+    
+    
     prompt = f"""
 You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
 Make the questions clinically relevant to target an audience of medical students and residents, Royal College of Physicians and Surgeons of Canada style.
@@ -54,8 +83,11 @@ Focus on clinical relevance, and if surgical content exists, include surgical pr
 Do NOT write specific questions on case details, such as asking about a patient's blood pressure.
 If the text refers to case numbers, do not add that information in the question stems.
 
+{topic_instruction}
+Each question MUST be tagged with ONE main topic.
+
 Generate exactly {total_questions} MCQs in this JSON format:
-[{{"question": "What is ...?", "options": {{"A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D"}}, "answer": "A"}}, ...]
+[{{"question": "What is ...?", "options": {{"A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D"}}, "answer": "A"}},"topic": "Pulmonary Embolism" ...]
 
 ⚠️ Return ONLY valid JSON. No explanation or markdown.
 
@@ -74,6 +106,8 @@ TEXT:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
         return []
 
+for mcq in mcqs:
+    st.session_state["used_topics"].add(mcq["topic"])
 
 # -------- Translation (GPT + Google Fallback) --------
 
@@ -221,6 +255,10 @@ if uploaded_file:
         st.text_area("Extracted Text", extracted_text[:1000] + "...", height=300)
 
     total_questions = st.slider("🔢 Total number of MCQs to generate", 1, 20, 5)
+    
+    if "topics" not in st.session_state:
+        st.session_state["topics"] = extract_topics(extracted_text)
+        st.session_state["used_topics"] = set()
 
 if st.button("🧠 Generate Quiz"):
     full_text = extracted_text
@@ -360,3 +398,27 @@ if st.session_state.get("translated_mcqs"):
                         if bilingual_mode:
                             st.caption(f"  **EN:** {r['english_options'][letter]}")
                 st.markdown("---")
+
+#Generate new questions
+if st.button("🔄 Generate New Questions"):
+    all_topics = set(st.session_state["topics"])
+    used_topics = st.session_state["used_topics"]
+
+    remaining_topics = list(all_topics - used_topics)
+
+    # If everything has been covered, allow repetition
+    preferred_topics = remaining_topics if remaining_topics else None
+
+    with st.spinner("Generating new questions..."):
+        mcqs = generate_mcqs(
+            st.session_state["extracted_text"],
+            total_questions=total_questions,
+            preferred_topics=preferred_topics
+        )
+
+    # Update used topics
+    for mcq in mcqs:
+        st.session_state["used_topics"].add(mcq["topic"])
+
+    st.session_state["original_mcqs"] = mcqs
+    st.session_state["translated_mcqs"] = translate_mcqs(mcqs, target_language_code)
