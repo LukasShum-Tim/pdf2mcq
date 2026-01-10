@@ -20,6 +20,9 @@ translator = Translator()
 if "regen" not in st.session_state:
     st.session_state["regen"] = False
 
+if "quiz_version" not in st.session_state:
+    st.session_state["quiz_version"] = 0
+
 # -------- PDF & Text Utilities --------
 
 def extract_text_from_pdf(file_obj):
@@ -300,6 +303,25 @@ language_options = list(language_map.keys())
 target_language_name = st.selectbox("Translate quiz to:", language_options, index=0)
 target_language_code = language_map[target_language_name]
 
+#Building the quiz
+def build_quiz(preferred_topics=None):
+    mcqs = generate_mcqs(
+        st.session_state["extracted_text"],
+        total_questions=st.session_state["total_questions"],
+        preferred_topics=preferred_topics,
+        seed_token=str(time.time())
+    )
+
+    for mcq in mcqs:
+        st.session_state["used_topics"].add(mcq["topic"])
+
+    translated = translate_mcqs(mcqs, st.session_state["target_language_code"])
+    mcqs, translated = shuffle_mcqs_pairwise(mcqs, translated)
+
+    st.session_state["original_mcqs"] = mcqs
+    st.session_state["translated_mcqs"] = translated
+    st.session_state["quiz_version"] += 1
+
 # File upload
 uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"])
 
@@ -318,66 +340,7 @@ if uploaded_file:
         st.session_state["used_topics"] = set()
 
     if st.button("🧠 Generate Quiz"):
-        full_text = extracted_text
-    
-        with st.spinner("Generating questions..."):
-            mcqs = generate_mcqs(full_text, total_questions)
-            st.session_state["original_mcqs"] = mcqs
-    
-        # ✅ update used topics AFTER generation
-        for mcq in mcqs:
-            st.session_state["used_topics"].add(mcq["topic"])
-
-        if mcqs:
-            with st.spinner(f"Translating to {target_language_name}..."):
-                translated_mcqs = translate_mcqs(mcqs, target_language_code)
-    
-                # ✅ Shuffle both English and translated MCQs together
-                def shuffle_mcq_pair(eng_mcq, trans_mcq):
-                    """Shuffle options in both English and translated MCQs in sync, updating the correct answer."""
-                    options = eng_mcq["options"]
-                    correct_letter = eng_mcq["answer"]
-                    correct_text = options[correct_letter]
-    
-                    # Generate one shuffle order (same for both)
-                    keys = list(options.keys())
-                    random.shuffle(keys)
-    
-                    new_eng_options = {}
-                    new_trans_options = {}
-                    for new_letter, old_letter in zip(string.ascii_uppercase, keys):
-                        new_eng_options[new_letter] = eng_mcq["options"][old_letter]
-                        new_trans_options[new_letter] = trans_mcq["options"][old_letter]
-    
-                    # Find new correct letter
-                    new_correct_letter = next(
-                        k for k, v in new_eng_options.items() if v == correct_text
-                    )
-    
-                    # Update both MCQs
-                    eng_mcq["options"] = new_eng_options
-                    trans_mcq["options"] = new_trans_options
-                    eng_mcq["answer"] = trans_mcq["answer"] = new_correct_letter
-    
-                    return eng_mcq, trans_mcq
-    
-                # Apply synchronized shuffle for each MCQ pair
-                synced_eng, synced_trans = [], []
-                for eng_mcq, trans_mcq in zip(mcqs, translated_mcqs):
-                    e, t = shuffle_mcq_pair(eng_mcq, trans_mcq)
-                    synced_eng.append(e)
-                    synced_trans.append(t)
-    
-                # Save shuffled, synced MCQs
-                st.session_state["original_mcqs"] = synced_eng
-                st.session_state["translated_mcqs"] = synced_trans
-    
-            st.success("✅ Quiz generated successfully!")
-        else:
-            st.error("❌ No MCQs were generated.")
-
-# Quiz form
-submitted = False
+        build_quiz()
 
 if st.session_state.get("translated_mcqs"):
     translated_mcqs = st.session_state["translated_mcqs"]
@@ -465,75 +428,7 @@ if st.session_state.get("translated_mcqs"):
 #Generate new questions
 if uploaded_file:
     if st.button("🔄 Generate New Questions"):
-        # Clear old MCQs
-        st.session_state["original_mcqs"] = []
-        st.session_state["translated_mcqs"] = []
-
-        # Determine preferred topics
         all_topics = set(st.session_state["topics"])
-        used_topics = st.session_state["used_topics"]
-        remaining_topics = list(all_topics - used_topics)
-        preferred_topics = remaining_topics if remaining_topics else None
-
-        with st.spinner("Generating new questions..."):
-            mcqs = generate_mcqs(
-                st.session_state["extracted_text"],
-                total_questions=total_questions,
-                preferred_topics=preferred_topics
-            )
-
-        for mcq in mcqs:
-            st.session_state["used_topics"].add(mcq["topic"])
-
-        if mcqs:
-            translated_mcqs = translate_mcqs(mcqs, target_language_code)
-            mcqs, translated_mcqs = shuffle_mcqs_pairwise(mcqs, translated_mcqs)
-            st.session_state["original_mcqs"] = mcqs
-            st.session_state["translated_mcqs"] = translated_mcqs
-
-        # ✅ Safe rerun after updating session state
-        st.experimental_rerun()
-
-
-# ------------------- Render Quiz Form -------------------
-if st.session_state.get("translated_mcqs"):
-    translated_mcqs = st.session_state["translated_mcqs"]
-    original_mcqs = st.session_state["original_mcqs"]
-    user_answers = []
-
-    bilingual_mode = target_language_name != "English"
-
-    # ✅ Only one form in the script
-    with st.form("quiz_form"):
-        st.header("📝 Take the Quiz")
-
-        for idx, mcq in enumerate(translated_mcqs):
-            if bilingual_mode:
-                st.markdown(f"### Q{idx + 1}: {mcq['question']}")
-                st.caption(f"**English:** {original_mcqs[idx]['question']}")
-            else:
-                st.subheader(f"Q{idx + 1}: {mcq['question']}")
-
-            options = mcq["options"]
-            ordered_keys = sorted(options.keys())
-
-            if bilingual_mode:
-                english_opts = original_mcqs[idx]["options"]
-                bilingual_opts = [
-                    f"{options[k]}  \n*EN: {english_opts[k]}*" for k in ordered_keys
-                ]
-                selected_text = st.radio("Choose an answer:", bilingual_opts, key=f"q{idx}")
-                selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
-            else:
-                ordered_options = [options[k] for k in ordered_keys]
-                selected_text = st.radio("Choose an answer:", ordered_options, key=f"q{idx}")
-                selected_letter = next(k for k, v in options.items() if v == selected_text)
-
-            user_answers.append(selected_letter)
-            st.markdown("---")
-
-        submitted = st.form_submit_button("✅ Submit Quiz")
-
-    if submitted:
-        score, results = score_quiz(user_answers, translated_mcqs, original_mcqs)
-        st.success(f"🎯 You scored {score} out of {len(results)}")
+        used = st.session_state["used_topics"]
+        remaining = list(all_topics - used)
+        build_quiz(preferred_topics=remaining if remaining else None)
