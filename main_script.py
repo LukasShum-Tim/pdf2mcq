@@ -87,21 +87,23 @@ If the text refers to case numbers, do not add that information in the question 
 Each question MUST be tagged with ONE main topic.
 
 Generate exactly {total_questions} MCQs in this JSON format:
-[
-  {
-    "question": "What is ...?",
-    "options": {
-      "A": "Option A",
-      "B": "Option B",
-      "C": "Option C",
-      "D": "Option D"
-    },
-    "answer": "A",
-    "topic": "Pulmonary Embolism"
-  }
-]
+{
+  "mcqs": [
+    {
+      "question": "What is ...?",
+      "options": {
+        "A": "Option A",
+        "B": "Option B",
+        "C": "Option C",
+        "D": "Option D"
+      },
+      "answer": "A",
+      "topic": "Pulmonary Embolism"
+    }
+  ]
+}
 
-⚠️ Return a JSON array of MCQs. Do not include any text outside the JSON.
+⚠️ Return a JSON object with a single key "mcqs" whose value is an array of MCQs. Do not include any text outside the JSON.
 
 TEXT:
 \"\"\"{text}\"\"\"
@@ -113,7 +115,8 @@ TEXT:
             temperature=0.7,
             response_format={"type": "json_object"}
         )
-        mcqs = json.loads(response.choices[0].message.content)
+        data = json.loads(response.choices[0].message.content)
+        mcqs = data["mcqs"]
         return mcqs
     except Exception as e:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
