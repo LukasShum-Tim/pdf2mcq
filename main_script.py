@@ -115,8 +115,8 @@ TEXT:
         temperature=0.7
     )
     
-    raw = response.choices[0].message.content
-    data = json.loads(raw)
+        raw = response.choices[0].message.content
+        data = json.loads(raw)
         
     except Exception as e:
         st.warning(f"⚠️ GPT MCQ generation failed: {e}")
