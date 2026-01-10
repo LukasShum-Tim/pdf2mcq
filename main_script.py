@@ -87,19 +87,7 @@ If the text refers to case numbers, do not add that information in the question 
 Each question MUST be tagged with ONE main topic.
 
 Generate exactly {total_questions} MCQs in this JSON format:
-[
-  {
-    "question": "What is ...?",
-    "options": {
-      "A": "Option A",
-      "B": "Option B",
-      "C": "Option C",
-      "D": "Option D"
-    },
-    "answer": "A",
-    "topic": "Pulmonary Embolism"
-  }
-]
+[{"question": "What is ...?", "options": {"A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D"}, "answer": "A","topic": "Pulmonary Embolism"}]
 
 ⚠️ Return a JSON array of MCQs. Do not include any text outside the JSON.
 
