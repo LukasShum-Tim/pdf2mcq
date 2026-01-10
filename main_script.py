@@ -14,6 +14,10 @@ import string
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 translator = Translator()
 
+# Reusing the quiz
+if "regen" not in st.session_state:
+    st.session_state["regen"] = False
+
 # -------- PDF & Text Utilities --------
 
 def extract_text_from_pdf(file_obj):
@@ -417,8 +421,10 @@ if st.session_state.get("translated_mcqs"):
                             st.caption(f"  **EN:** {r['english_options'][letter]}")
                 st.markdown("---")
 
-    #Generate new questions
+#Generate new questions
+if submitted:
     if st.button("🔄 Generate New Questions"):
+        st.session_state["regen"] = True
         all_topics = set(st.session_state["topics"])
         used_topics = st.session_state["used_topics"]
     
@@ -438,5 +444,13 @@ if st.session_state.get("translated_mcqs"):
         for mcq in mcqs:
             st.session_state["used_topics"].add(mcq["topic"])
     
-        st.session_state["original_mcqs"] = mcqs
-        st.session_state["translated_mcqs"] = translate_mcqs(mcqs, target_language_code)
+        if st.session_state["regen"]:
+            mcqs = generate_mcqs(
+                st.session_state["extracted_text"],
+                total_questions=total_questions,
+                preferred_topics=preferred_topics
+            )
+        
+            st.session_state["original_mcqs"] = mcqs
+            st.session_state["translated_mcqs"] = translate_mcqs(mcqs, target_language_code)
+            st.session_state["regen"] = False
