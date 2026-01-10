@@ -463,7 +463,6 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 #Generate new questions
-# Generate new questions
 if uploaded_file:
     if st.button("🔄 Generate New Questions"):
         # Clear old MCQs
@@ -494,19 +493,20 @@ if uploaded_file:
             st.session_state["original_mcqs"] = mcqs
             st.session_state["translated_mcqs"] = translated_mcqs
 
-        # Immediately rerun to update the display outside the form
+        # ✅ Immediately rerun outside the form to refresh UI
         st.experimental_rerun()
 
-# --- Quiz form (only render if MCQs exist) ---
+
+# ------------------- Render Quiz Form (ONLY ONCE) -------------------
 if st.session_state.get("translated_mcqs"):
     translated_mcqs = st.session_state["translated_mcqs"]
     original_mcqs = st.session_state["original_mcqs"]
     user_answers = []
 
-    with st.form("quiz_form"):
-        st.header("📝 Take the Quiz")
+    bilingual_mode = target_language_name != "English"
 
-        bilingual_mode = target_language_name != "English"
+    with st.form("quiz_form"):  # Only one form in the app
+        st.header("📝 Take the Quiz")
 
         for idx, mcq in enumerate(translated_mcqs):
             if bilingual_mode:
@@ -546,9 +546,5 @@ if st.session_state.get("translated_mcqs"):
         submitted = st.form_submit_button("✅ Submit Quiz")
 
     if submitted:
-        score, results = score_quiz(
-            user_answers,
-            translated_mcqs,
-            original_mcqs
-        )
+        score, results = score_quiz(user_answers, translated_mcqs, original_mcqs)
         st.success(f"🎯 You scored {score} out of {len(results)}")
