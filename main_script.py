@@ -273,16 +273,16 @@ if uploaded_file:
         st.session_state["topics"] = extract_topics(extracted_text)
         st.session_state["used_topics"] = set()
 
-if st.button("🧠 Generate Quiz"):
-    full_text = extracted_text
-
-    with st.spinner("Generating questions..."):
-        mcqs = generate_mcqs(full_text, total_questions)
-        st.session_state["original_mcqs"] = mcqs
-
-    # ✅ update used topics AFTER generation
-    for mcq in mcqs:
-        st.session_state["used_topics"].add(mcq["topic"])
+    if st.button("🧠 Generate Quiz"):
+        full_text = extracted_text
+    
+        with st.spinner("Generating questions..."):
+            mcqs = generate_mcqs(full_text, total_questions)
+            st.session_state["original_mcqs"] = mcqs
+    
+        # ✅ update used topics AFTER generation
+        for mcq in mcqs:
+            st.session_state["used_topics"].add(mcq["topic"])
 
     if mcqs:
         with st.spinner(f"Translating to {target_language_name}..."):
@@ -416,26 +416,26 @@ if st.session_state.get("translated_mcqs"):
                             st.caption(f"  **EN:** {r['english_options'][letter]}")
                 st.markdown("---")
 
-#Generate new questions
-if st.button("🔄 Generate New Questions"):
-    all_topics = set(st.session_state["topics"])
-    used_topics = st.session_state["used_topics"]
-
-    remaining_topics = list(all_topics - used_topics)
-
-    # If everything has been covered, allow repetition
-    preferred_topics = remaining_topics if remaining_topics else None
-
-    with st.spinner("Generating new questions..."):
-        mcqs = generate_mcqs(
-            st.session_state["extracted_text"],
-            total_questions=total_questions,
-            preferred_topics=preferred_topics
-        )
-
-    # Update used topics
-    for mcq in mcqs:
-        st.session_state["used_topics"].add(mcq["topic"])
-
-    st.session_state["original_mcqs"] = mcqs
-    st.session_state["translated_mcqs"] = translate_mcqs(mcqs, target_language_code)
+    #Generate new questions
+    if st.button("🔄 Generate New Questions"):
+        all_topics = set(st.session_state["topics"])
+        used_topics = st.session_state["used_topics"]
+    
+        remaining_topics = list(all_topics - used_topics)
+    
+        # If everything has been covered, allow repetition
+        preferred_topics = remaining_topics if remaining_topics else None
+    
+        with st.spinner("Generating new questions..."):
+            mcqs = generate_mcqs(
+                st.session_state["extracted_text"],
+                total_questions=total_questions,
+                preferred_topics=preferred_topics
+            )
+    
+        # Update used topics
+        for mcq in mcqs:
+            st.session_state["used_topics"].add(mcq["topic"])
+    
+        st.session_state["original_mcqs"] = mcqs
+        st.session_state["translated_mcqs"] = translate_mcqs(mcqs, target_language_code)
