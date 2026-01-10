@@ -9,6 +9,7 @@ from googletrans import Translator
 import random
 import asyncio
 import string
+import time
 
 # Set your OpenAI API key securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -99,6 +100,7 @@ def shuffle_mcqs_pairwise(mcqs, translated_mcqs):
 
 def generate_mcqs(text, total_questions=5, preferred_topics=None):
     topic_instruction = ""
+    seed_token = str(time.time())
     if preferred_topics:
         topic_instruction = f"""
 Prioritize generating questions from these topics:
@@ -108,6 +110,7 @@ Avoid repeating previously used topics if possible.
     
     
     prompt = f"""
+Seed token: {seed_token}
 You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
 Make the questions clinically relevant to target an audience of medical students and residents, Royal College of Physicians and Surgeons of Canada style.
 Ensure the questions are **proportional across the manual**, covering all major topics.
@@ -452,39 +455,35 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 #Generate new questions
-if st.session_state.get("translated_mcqs") and submitted:
+if st.session_state.get("translated_mcqs"):
     if st.button("🔄 Generate New Questions"):
         st.session_state["regen"] = True
-  
-# Handle regeneration
+
 if st.session_state.get("regen"):
+    st.session_state["original_mcqs"] = []
+    st.session_state["translated_mcqs"] = []
 
     all_topics = set(st.session_state["topics"])
     used_topics = st.session_state["used_topics"]
-
     remaining_topics = list(all_topics - used_topics)
     preferred_topics = remaining_topics if remaining_topics else None
 
     with st.spinner("Generating new questions..."):
-        # Generate new MCQs
+        seed_token = str(time.time())
         mcqs = generate_mcqs(
             st.session_state["extracted_text"],
             total_questions=total_questions,
-            preferred_topics=preferred_topics
+            preferred_topics=preferred_topics,
+            seed_token=seed_token  # pass seed token into prompt
         )
 
-    # Update used topics
     for mcq in mcqs:
         st.session_state["used_topics"].add(mcq["topic"])
 
     if mcqs:
-        with st.spinner(f"Translating to {target_language_name}..."):
-            translated_mcqs = translate_mcqs(mcqs, target_language_code)
-
-            # ✅ Shuffle English + translated MCQs together
-            mcqs, translated_mcqs = shuffle_mcqs_pairwise(mcqs, translated_mcqs)
-
-            st.session_state["original_mcqs"] = mcqs
-            st.session_state["translated_mcqs"] = translated_mcqs
+        translated_mcqs = translate_mcqs(mcqs, target_language_code)
+        mcqs, translated_mcqs = shuffle_mcqs_pairwise(mcqs, translated_mcqs)
+        st.session_state["original_mcqs"] = mcqs
+        st.session_state["translated_mcqs"] = translated_mcqs
 
     st.session_state["regen"] = False
