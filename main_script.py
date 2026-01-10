@@ -574,7 +574,15 @@ if st.session_state.get("show_generate_new"):
     url_students = "https://forms.gle/CWKRqptQhpdLKaj8A"
 
     st.markdown("### 📝 Help Us Improve")
-
+    # Show translation only if non-English
+    if target_language_code != "en":
+        translated_feedback = translate_text_gpt(
+            "Help us improve",
+            target_language_code
+        )
+        if translated_feedback:
+            st.write(translated_feedback)
+    
     # Always show English
     feedback_text_en = (
     "Thank you for trying this multilingual short answer question generator! "
