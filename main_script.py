@@ -334,7 +334,7 @@ if uploaded_file:
     with st.expander("🔍 Preview Extracted Text"):
         st.text_area("Extracted Text", extracted_text[:1000] + "...", height=300)
 
-    st.session_state["total_questions"] = st.slider(
+    st.slider(
         "🔢 Total number of MCQs to generate",
         1, 20, 5,
         key="total_questions"
