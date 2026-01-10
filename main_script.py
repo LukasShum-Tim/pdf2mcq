@@ -439,3 +439,4 @@ if uploaded_file:
         used = st.session_state["used_topics"]
         remaining = list(all_topics - used)
         build_quiz(preferred_topics=remaining if remaining else None)
+        st.rerun()
