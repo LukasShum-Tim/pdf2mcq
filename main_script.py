@@ -110,7 +110,7 @@ TEXT:
         response = client.chat.completions.create(
             model="gpt-4.1-mini-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
+            temperature=0.7,
             response_format={"type": "json_object"}
         )
         mcqs = json.loads(response.choices[0].message.content)
