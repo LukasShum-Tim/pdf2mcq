@@ -326,6 +326,7 @@ def build_quiz(preferred_topics=None):
     st.session_state["original_mcqs"] = mcqs
     st.session_state["translated_mcqs"] = translated
     st.session_state["quiz_version"] += 1
+    st.session_state["show_results"] = False
 
 # File upload
 uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"])
@@ -401,6 +402,9 @@ if st.session_state.get("translated_mcqs"):
 
 
     if submitted:
+        st.session_state["show_results"] = True
+        
+    if st.session_state.get("show_results"):
         score, results = score_quiz(
             user_answers,
             translated_mcqs,
