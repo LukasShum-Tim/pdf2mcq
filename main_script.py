@@ -465,33 +465,33 @@ if st.session_state.get("translated_mcqs"):
 #Generate new questions
 if st.session_state.get("translated_mcqs"):
     if st.button("🔄 Generate New Questions"):
-        st.session_state["regen"] = True
+        # Clear old MCQs
+        st.session_state["original_mcqs"] = []
+        st.session_state["translated_mcqs"] = []
 
-if st.session_state.get("regen"):
-    st.session_state["original_mcqs"] = []
-    st.session_state["translated_mcqs"] = []
+        # Determine preferred topics
+        all_topics = set(st.session_state["topics"])
+        used_topics = st.session_state["used_topics"]
+        remaining_topics = list(all_topics - used_topics)
+        preferred_topics = remaining_topics if remaining_topics else None
 
-    all_topics = set(st.session_state["topics"])
-    used_topics = st.session_state["used_topics"]
-    remaining_topics = list(all_topics - used_topics)
-    preferred_topics = remaining_topics if remaining_topics else None
+        with st.spinner("Generating new questions..."):
+            seed_token = str(time.time())
+            mcqs = generate_mcqs(
+                st.session_state["extracted_text"],
+                total_questions=total_questions,
+                preferred_topics=preferred_topics,
+                seed_token=seed_token
+            )
 
-    with st.spinner("Generating new questions..."):
-        seed_token = str(time.time())
-        mcqs = generate_mcqs(
-            st.session_state["extracted_text"],
-            total_questions=total_questions,
-            preferred_topics=preferred_topics,
-            seed_token=seed_token  # pass seed token into prompt
-        )
+        for mcq in mcqs:
+            st.session_state["used_topics"].add(mcq["topic"])
 
-    for mcq in mcqs:
-        st.session_state["used_topics"].add(mcq["topic"])
+        if mcqs:
+            translated_mcqs = translate_mcqs(mcqs, target_language_code)
+            mcqs, translated_mcqs = shuffle_mcqs_pairwise(mcqs, translated_mcqs)
+            st.session_state["original_mcqs"] = mcqs
+            st.session_state["translated_mcqs"] = translated_mcqs
 
-    if mcqs:
-        translated_mcqs = translate_mcqs(mcqs, target_language_code)
-        mcqs, translated_mcqs = shuffle_mcqs_pairwise(mcqs, translated_mcqs)
-        st.session_state["original_mcqs"] = mcqs
-        st.session_state["translated_mcqs"] = translated_mcqs
-
-    st.session_state["regen"] = False
+        # Force Streamlit to rerun so new MCQs appear immediately
+        st.experimental_rerun()
