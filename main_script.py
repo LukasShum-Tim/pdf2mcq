@@ -107,10 +107,10 @@ Prioritize generating questions from these topics:
 {', '.join(preferred_topics)}
 Avoid repeating previously used topics if possible.
 """
-    
+
+    seed_text = f"\n\nSeed token: {seed_token}" if seed_token else ""
     
     prompt = f"""
-Seed token: {seed_token}
 You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
 Make the questions clinically relevant to target an audience of medical students and residents, Royal College of Physicians and Surgeons of Canada style.
 Ensure the questions are **proportional across the manual**, covering all major topics.
@@ -120,6 +120,7 @@ If the text refers to case numbers, do not add that information in the question 
 
 {topic_instruction}
 Each question MUST be tagged with ONE main topic.
+{seed_text}
 
 Generate exactly {total_questions} MCQs in this JSON format:
 {{
