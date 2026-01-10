@@ -284,53 +284,53 @@ if uploaded_file:
         for mcq in mcqs:
             st.session_state["used_topics"].add(mcq["topic"])
 
-    if mcqs:
-        with st.spinner(f"Translating to {target_language_name}..."):
-            translated_mcqs = translate_mcqs(mcqs, target_language_code)
-
-            # ✅ Shuffle both English and translated MCQs together
-            def shuffle_mcq_pair(eng_mcq, trans_mcq):
-                """Shuffle options in both English and translated MCQs in sync, updating the correct answer."""
-                options = eng_mcq["options"]
-                correct_letter = eng_mcq["answer"]
-                correct_text = options[correct_letter]
-
-                # Generate one shuffle order (same for both)
-                keys = list(options.keys())
-                random.shuffle(keys)
-
-                new_eng_options = {}
-                new_trans_options = {}
-                for new_letter, old_letter in zip(string.ascii_uppercase, keys):
-                    new_eng_options[new_letter] = eng_mcq["options"][old_letter]
-                    new_trans_options[new_letter] = trans_mcq["options"][old_letter]
-
-                # Find new correct letter
-                new_correct_letter = next(
-                    k for k, v in new_eng_options.items() if v == correct_text
-                )
-
-                # Update both MCQs
-                eng_mcq["options"] = new_eng_options
-                trans_mcq["options"] = new_trans_options
-                eng_mcq["answer"] = trans_mcq["answer"] = new_correct_letter
-
-                return eng_mcq, trans_mcq
-
-            # Apply synchronized shuffle for each MCQ pair
-            synced_eng, synced_trans = [], []
-            for eng_mcq, trans_mcq in zip(mcqs, translated_mcqs):
-                e, t = shuffle_mcq_pair(eng_mcq, trans_mcq)
-                synced_eng.append(e)
-                synced_trans.append(t)
-
-            # Save shuffled, synced MCQs
-            st.session_state["original_mcqs"] = synced_eng
-            st.session_state["translated_mcqs"] = synced_trans
-
-        st.success("✅ Quiz generated successfully!")
-    else:
-        st.error("❌ No MCQs were generated.")
+        if mcqs:
+            with st.spinner(f"Translating to {target_language_name}..."):
+                translated_mcqs = translate_mcqs(mcqs, target_language_code)
+    
+                # ✅ Shuffle both English and translated MCQs together
+                def shuffle_mcq_pair(eng_mcq, trans_mcq):
+                    """Shuffle options in both English and translated MCQs in sync, updating the correct answer."""
+                    options = eng_mcq["options"]
+                    correct_letter = eng_mcq["answer"]
+                    correct_text = options[correct_letter]
+    
+                    # Generate one shuffle order (same for both)
+                    keys = list(options.keys())
+                    random.shuffle(keys)
+    
+                    new_eng_options = {}
+                    new_trans_options = {}
+                    for new_letter, old_letter in zip(string.ascii_uppercase, keys):
+                        new_eng_options[new_letter] = eng_mcq["options"][old_letter]
+                        new_trans_options[new_letter] = trans_mcq["options"][old_letter]
+    
+                    # Find new correct letter
+                    new_correct_letter = next(
+                        k for k, v in new_eng_options.items() if v == correct_text
+                    )
+    
+                    # Update both MCQs
+                    eng_mcq["options"] = new_eng_options
+                    trans_mcq["options"] = new_trans_options
+                    eng_mcq["answer"] = trans_mcq["answer"] = new_correct_letter
+    
+                    return eng_mcq, trans_mcq
+    
+                # Apply synchronized shuffle for each MCQ pair
+                synced_eng, synced_trans = [], []
+                for eng_mcq, trans_mcq in zip(mcqs, translated_mcqs):
+                    e, t = shuffle_mcq_pair(eng_mcq, trans_mcq)
+                    synced_eng.append(e)
+                    synced_trans.append(t)
+    
+                # Save shuffled, synced MCQs
+                st.session_state["original_mcqs"] = synced_eng
+                st.session_state["translated_mcqs"] = synced_trans
+    
+            st.success("✅ Quiz generated successfully!")
+        else:
+            st.error("❌ No MCQs were generated.")
 
 # Quiz form
 if st.session_state.get("translated_mcqs"):
