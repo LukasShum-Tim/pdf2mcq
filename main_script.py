@@ -403,6 +403,7 @@ if st.session_state.get("translated_mcqs"):
 
     if submitted:
         st.session_state["show_results"] = True
+        generate_new_questions_button = True
         
     if st.session_state.get("show_results"):
         score, results = score_quiz(
@@ -437,10 +438,11 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 #Generate new questions
-if st.session_state["show_results"]:
+if generate_new_questions_button:
     if st.button("🔄 Generate New Questions"):
         all_topics = set(st.session_state["topics"])
         used = st.session_state["used_topics"]
         remaining = list(all_topics - used)
         build_quiz(preferred_topics=remaining if remaining else None)
+        gneerate_new_questions_button = False
         st.rerun()
