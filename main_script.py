@@ -455,9 +455,7 @@ if st.session_state.get("translated_mcqs"):
 if st.session_state.get("translated_mcqs") and submitted:
     if st.button("🔄 Generate New Questions"):
         st.session_state["regen"] = True
-else:
-    
-
+  
 # Handle regeneration
 if st.session_state.get("regen"):
 
