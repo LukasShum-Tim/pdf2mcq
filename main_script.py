@@ -10,6 +10,7 @@ import random
 import asyncio
 import string
 import time
+import re
 
 # Set your OpenAI API key securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -98,9 +99,9 @@ def shuffle_mcqs_pairwise(mcqs, translated_mcqs):
 
 # -------- GPT-Based MCQ Generation --------
 
-def generate_mcqs(text, total_questions=5, preferred_topics=None):
+def generate_mcqs(text, total_questions=5, preferred_topics=None, seed_token=None):
     topic_instruction = ""
-    seed_token = str(time.time())
+    seed_token = seed_token or str(time.time())
     if preferred_topics:
         topic_instruction = f"""
 Prioritize generating questions from these topics:
@@ -122,7 +123,7 @@ If the text refers to case numbers, do not add that information in the question 
 Each question MUST be tagged with ONE main topic.
 {seed_text}
 
-Generate exactly {total_questions} MCQs in this JSON format:
+Generate exactly {total_questions} MCQs in this JSON format ONLY:
 {{
   "mcqs": [
     {{
@@ -139,7 +140,7 @@ Generate exactly {total_questions} MCQs in this JSON format:
   ]
 }}
 
-⚠️ Return ONLY valid JSON. Do not include any text outside the JSON.
+⚠️ Return ONLY valid JSON. Do not include any text outside the JSON. Do not write anything else. No explanations, no extra text.
 
 TEXT:
 \"\"\"{text}\"\"\"
@@ -152,7 +153,13 @@ TEXT:
     )
     
         raw = response.choices[0].message.content
-        data = json.loads(raw)
+        
+        # Safe JSON parsing
+        match = re.search(r'\{.*\}', raw, flags=re.DOTALL)
+        if not match:
+            raise ValueError(f"Failed to extract JSON from GPT output:\n{raw}")
+
+        data = json.loads(match.group())
         return data["mcqs"]
         
     except Exception as e:
