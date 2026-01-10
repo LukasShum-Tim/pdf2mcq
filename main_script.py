@@ -306,6 +306,10 @@ st.session_state["target_language_code"] = target_language_code
 
 #Building the quiz
 def build_quiz(preferred_topics=None):
+    for k in list(st.session_state.keys()):
+    if k.startswith("q_"):
+        del st.session_state[k]
+        
     mcqs = generate_mcqs(
         st.session_state["extracted_text"],
         total_questions=st.session_state["total_questions"],
@@ -354,49 +358,47 @@ if st.session_state.get("translated_mcqs"):
 
     bilingual_mode = target_language_name != "English"
 
-    with st.form("quiz_form"):
+    with st.form(f"quiz_form_{st.session_state['quiz_version']}"):
         st.header("📝 Take the Quiz")
-    
-        bilingual_mode = target_language_name != "English"
-    
+
         for idx, mcq in enumerate(translated_mcqs):
             if bilingual_mode:
                 st.markdown(f"### Q{idx + 1}: {mcq['question']}")
                 st.caption(f"**English:** {original_mcqs[idx]['question']}")
             else:
                 st.subheader(f"Q{idx + 1}: {mcq['question']}")
-    
+
             options = mcq["options"]
             ordered_keys = sorted(options.keys())
-    
+
             if bilingual_mode:
                 english_opts = original_mcqs[idx]["options"]
-                bilingual_opts = []
-                for k in ordered_keys:
-                    translated = options[k]
-                    english = english_opts[k]
-                    bilingual_opts.append(f"{translated}  \n*EN: {english}*")
+                bilingual_opts = [
+                    f"{options[k]}  \n*EN: {english_opts[k]}*"
+                    for k in ordered_keys
+                ]
                 selected_text = st.radio(
                     "Choose an answer:",
                     bilingual_opts,
-                    key=f"q{idx}"
+                    key=f"q_{st.session_state['quiz_version']}_{idx}"
                 )
-    
-                # Match the selected_text to its corresponding letter
                 selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
             else:
                 ordered_options = [options[k] for k in ordered_keys]
                 selected_text = st.radio(
                     "Choose an answer:",
                     ordered_options,
-                    key=f"q{idx}"
+                    key=f"q_{st.session_state['quiz_version']}_{idx}"
                 )
-                selected_letter = next(k for k, v in options.items() if v == selected_text)
-    
+                selected_letter = next(
+                    k for k, v in options.items() if v == selected_text
+                )
+
             user_answers.append(selected_letter)
             st.markdown("---")
-    
+
         submitted = st.form_submit_button("✅ Submit Quiz")
+
 
     if submitted:
         score, results = score_quiz(
