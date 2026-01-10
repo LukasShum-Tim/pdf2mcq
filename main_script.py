@@ -463,7 +463,8 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 #Generate new questions
-if st.session_state.get("translated_mcqs"):
+# Generate new questions
+if uploaded_file:
     if st.button("🔄 Generate New Questions"):
         # Clear old MCQs
         st.session_state["original_mcqs"] = []
@@ -493,5 +494,61 @@ if st.session_state.get("translated_mcqs"):
             st.session_state["original_mcqs"] = mcqs
             st.session_state["translated_mcqs"] = translated_mcqs
 
-        # Force Streamlit to rerun so new MCQs appear immediately
+        # Immediately rerun to update the display outside the form
         st.experimental_rerun()
+
+# --- Quiz form (only render if MCQs exist) ---
+if st.session_state.get("translated_mcqs"):
+    translated_mcqs = st.session_state["translated_mcqs"]
+    original_mcqs = st.session_state["original_mcqs"]
+    user_answers = []
+
+    with st.form("quiz_form"):
+        st.header("📝 Take the Quiz")
+
+        bilingual_mode = target_language_name != "English"
+
+        for idx, mcq in enumerate(translated_mcqs):
+            if bilingual_mode:
+                st.markdown(f"### Q{idx + 1}: {mcq['question']}")
+                st.caption(f"**English:** {original_mcqs[idx]['question']}")
+            else:
+                st.subheader(f"Q{idx + 1}: {mcq['question']}")
+
+            options = mcq["options"]
+            ordered_keys = sorted(options.keys())
+
+            if bilingual_mode:
+                english_opts = original_mcqs[idx]["options"]
+                bilingual_opts = []
+                for k in ordered_keys:
+                    translated = options[k]
+                    english = english_opts[k]
+                    bilingual_opts.append(f"{translated}  \n*EN: {english}*")
+                selected_text = st.radio(
+                    "Choose an answer:",
+                    bilingual_opts,
+                    key=f"q{idx}"
+                )
+                selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
+            else:
+                ordered_options = [options[k] for k in ordered_keys]
+                selected_text = st.radio(
+                    "Choose an answer:",
+                    ordered_options,
+                    key=f"q{idx}"
+                )
+                selected_letter = next(k for k, v in options.items() if v == selected_text)
+
+            user_answers.append(selected_letter)
+            st.markdown("---")
+
+        submitted = st.form_submit_button("✅ Submit Quiz")
+
+    if submitted:
+        score, results = score_quiz(
+            user_answers,
+            translated_mcqs,
+            original_mcqs
+        )
+        st.success(f"🎯 You scored {score} out of {len(results)}")
