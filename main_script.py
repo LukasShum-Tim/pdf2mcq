@@ -613,9 +613,8 @@ if st.session_state.get("translated_mcqs"):
         
         # Prevent duplicate save on reruns
         if not st.session_state.get("quiz_saved", False):
-            t = time.localtime()
             st.session_state["quiz_history"].append({
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", t),
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "language_name": st.session_state["target_language_code"],
                 "language_code": target_language_code,
                 "score": score,
@@ -685,7 +684,7 @@ if st.session_state.get("translated_mcqs"):
                 quiz_idx = st.selectbox(
                     ui("Select quiz attempt:"),
                     list(range(len(st.session_state["quiz_history"]))),
-                    format_func=lambda i: f"Attempt {i + 1} — {st.session_state['quiz_history'][i]['timestamp']}"
+                    format_func=lambda i: ui(f"Attempt {i + 1}")
                 )
             
                 quiz = st.session_state["quiz_history"][quiz_idx]
