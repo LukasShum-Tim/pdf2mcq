@@ -443,9 +443,6 @@ def build_quiz(preferred_topics=None):
         st.session_state["topic_status"][mcq["topic"]]["questions"].append(mcq)
     
     update_progress(progress, status, 35, "Tracking covered topics...")
-    
-    for mcq in mcqs:
-        st.session_state["topic_status"][topic]["used"].add(mcq["topic"])
 
     if target_language_name != "en":
         update_progress(progress, status, 55, "Translating questions...")
@@ -489,8 +486,7 @@ if uploaded_file:
     
     if "topics" not in st.session_state:
         st.session_state["topics"] = extract_topics(extracted_text)
-        st.session_state["topic_status"][topic]["used"] = set()
-
+    
     if "topic_status" not in st.session_state:
         st.session_state["topic_status"] = {
             t: {
@@ -555,6 +551,14 @@ if st.session_state.get("translated_mcqs"):
         st.session_state["show_results"] = True
         st.session_state["show_generate_new"] = True
 
+    if st.session_state.get("show_results"):
+        score, results = score_quiz(
+            user_answers,
+            translated_mcqs,
+            original_mcqs
+        )
+        st.success(f"🎯 You scored {score} out of {len(results)}")
+
         #Question history
         if "quiz_history" not in st.session_state:
             st.session_state["quiz_history"] = []
@@ -567,14 +571,6 @@ if st.session_state.get("translated_mcqs"):
             "results": results
         })
         
-    if st.session_state.get("show_results"):
-        score, results = score_quiz(
-            user_answers,
-            translated_mcqs,
-            original_mcqs
-        )
-        st.success(f"🎯 You scored {score} out of {len(results)}")
-
         # -------- Feedback section --------
         with st.expander("📊 View Detailed Feedback"):
             for i, r in enumerate(results):
@@ -639,9 +635,11 @@ if st.session_state.get("translated_mcqs"):
 #Generate new questions
 if st.session_state.get("show_generate_new"):
     if st.button("🔄 Generate New Questions"):
-        all_topics = set(st.session_state["topics"])
-        used = st.session_state["topic_status"][topic]["used"]
-        remaining = list(all_topics - used)
+        remaining = [
+            t for t, v in st.session_state["topic_status"].items()
+            if not v["used"]
+        ]
+        
         build_quiz(preferred_topics=remaining if remaining else None)
         st.rerun()
 
