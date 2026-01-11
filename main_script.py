@@ -531,7 +531,7 @@ if "pdf_bytes" in st.session_state:
 
     st.slider(
         ui("🔢 Total number of MCQs to generate"),
-        1, 20, 5,
+        1, 10, 5,
         key="total_questions"
     )
 
