@@ -651,7 +651,7 @@ if st.session_state.get("translated_mcqs"):
             ]
         )
     
-        if view_mode.startswith("**Topic Coverage**") or view_mode.startswith("Topic Coverage"):
+        if view_mode.startswith("**Major Topics**") or view_mode.startswith("Major Topics"):
             for topic, data in st.session_state["topic_status"].items():
                 if data["count"] == 0:
                     status_text = ui("⏳ Not yet asked")
