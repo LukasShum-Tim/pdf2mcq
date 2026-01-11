@@ -12,6 +12,7 @@ import string
 import time
 import re
 import random
+import io
 
 # Set your OpenAI API key securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -437,7 +438,12 @@ language_map = {
     'Zulu': 'zu',
 }
 language_options = list(language_map.keys())
-target_language_name = st.selectbox(ui("Translate quiz to:"), language_options, index=0)
+target_language_name = st.selectbox(
+    ui("Translate quiz to:"),
+    language_options,
+    index=0,
+    key="language_selector"
+)
 target_language_code = language_map[target_language_name]
 st.session_state["target_language_code"] = target_language_code
 
@@ -494,6 +500,7 @@ def build_quiz():
     status.empty()
 
 # File upload
+
 uploaded_file = st.file_uploader(
     ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors."),
     type=["pdf"],
@@ -501,6 +508,7 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file:
+    st.session_state["pdf_bytes"] = uploaded_file.getvalue()
     st.session_state["pdf_changed"] = True
 
 if "pdf_bytes" in st.session_state:
@@ -508,9 +516,8 @@ if "pdf_bytes" in st.session_state:
         io.BytesIO(st.session_state["pdf_bytes"])
     )
     st.session_state["extracted_text"] = extracted_text
-    st.session_state["pdf_bytes"] = uploaded_file.getvalue()
+
     st.success(ui("✅ PDF uploaded successfully."))
-    st.session_state["extracted_text"] = extracted_text
 
     with st.expander(ui("🔍 Preview Extracted Text")):
         st.text_area("Extracted Text", extracted_text[:1000] + "...", height=300)
@@ -520,23 +527,15 @@ if "pdf_bytes" in st.session_state:
         1, 20, 5,
         key="total_questions"
     )
-    
+
     if "topics" not in st.session_state or st.session_state.get("pdf_changed"):
-        st.session_state["topics"] = extract_topics(st.session_state["extracted_text"])
+        st.session_state["topics"] = extract_topics(extracted_text)
         st.session_state["topic_status"] = {
             t: {"count": 0, "questions": []}
             for t in st.session_state["topics"]
         }
         st.session_state["pdf_changed"] = False
-    
-    if "topic_status" not in st.session_state:
-        st.session_state["topic_status"] = {
-            t: {
-                "count": 0,
-                "questions": []
-            } for t in st.session_state["topics"]
-        }
-        
+
     if st.button(ui("🧠 Generate Quiz")):
         build_quiz()
 
@@ -545,7 +544,7 @@ if st.session_state.get("translated_mcqs"):
     original_mcqs = st.session_state["original_mcqs"]
     user_answers = []
 
-    bilingual_mode = st.session_state["target_language_code"] != "English"
+    bilingual_mode = st.session_state["target_language_code"] != "en"
 
     with st.form(f"quiz_form_{st.session_state['quiz_version']}"):
         st.header(ui("📝 Take the Quiz"))
