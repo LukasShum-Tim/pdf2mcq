@@ -25,6 +25,9 @@ if "quiz_version" not in st.session_state:
 if "show_generate_new" not in st.session_state:
     st.session_state["show_generate_new"] = False
 
+if "topics_initialized" not in st.session_state:
+    st.session_state["topics_initialized"] = False
+
 # -------- PDF & Text Utilities --------
 
 def select_topics_for_quiz(n):
@@ -510,6 +513,7 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
     st.session_state["pdf_bytes"] = uploaded_file.getvalue()
     st.session_state["pdf_changed"] = True
+    st.session_state["topics_initialized"] = False
 
 if "pdf_bytes" in st.session_state:
     extracted_text = extract_text_from_pdf(
@@ -528,13 +532,13 @@ if "pdf_bytes" in st.session_state:
         key="total_questions"
     )
 
-    if "topics" not in st.session_state or st.session_state.get("pdf_changed"):
+    if not st.session_state["topics_initialized"]:
         st.session_state["topics"] = extract_topics(extracted_text)
         st.session_state["topic_status"] = {
             t: {"count": 0, "questions": []}
             for t in st.session_state["topics"]
         }
-        st.session_state["pdf_changed"] = False
+        st.session_state["topics_initialized"] = True
 
     if st.button(ui("🧠 Generate Quiz")):
         build_quiz()
