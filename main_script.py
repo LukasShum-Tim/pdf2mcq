@@ -511,9 +511,12 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file:
-    st.session_state["pdf_bytes"] = uploaded_file.getvalue()
-    st.session_state["pdf_changed"] = True
-    st.session_state["topics_initialized"] = False
+    pdf_bytes = uploaded_file.getvalue()
+
+    # Only reset if this is a NEW PDF
+    if st.session_state.get("pdf_bytes") != pdf_bytes:
+        st.session_state["pdf_bytes"] = pdf_bytes
+        st.session_state["topics_initialized"] = False
 
 if "pdf_bytes" in st.session_state:
     extracted_text = extract_text_from_pdf(
