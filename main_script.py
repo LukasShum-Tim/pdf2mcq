@@ -423,7 +423,8 @@ st.session_state["target_language_code"] = target_language_code
 def build_quiz():
     progress = st.progress(0)
     status = st.empty()
-
+    st.session_state["quiz_saved"] = False
+    
     update_progress(progress, status, 5, "Preparing quiz...")
 
     # Clear old answers
@@ -565,14 +566,25 @@ if st.session_state.get("translated_mcqs"):
         #Question history
         if "quiz_history" not in st.session_state:
             st.session_state["quiz_history"] = []
-    
-        st.session_state["quiz_history"].append({
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "language": target_language_name,
-            "score": score,
-            "total": len(results),
-            "results": results
-        })
+        
+        # Prevent duplicate save on reruns
+        if not st.session_state.get("quiz_saved", False):
+            st.session_state["quiz_history"].append({
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "language": target_language_name,
+                "score": score,
+                "total": len(results),
+                "questions": [
+                    {
+                        "question": original_mcqs[i]["question"],
+                        "options": original_mcqs[i]["options"],
+                        "correct": original_mcqs[i]["answer"],
+                        "selected": user_answers[i]
+                    }
+                    for i in range(len(original_mcqs))
+                ]
+            })
+            st.session_state["quiz_saved"] = True
         
         # -------- Feedback section --------
         with st.expander("📊 View Detailed Feedback"):
@@ -619,15 +631,28 @@ if st.session_state.get("translated_mcqs"):
         elif view_mode == "Previous Questions":
             quiz_idx = st.selectbox(
                 "Select quiz attempt:",
-                range(len(st.session_state["quiz_history"])),
-                format_func=lambda i: f"Attempt {i+1}"
+                list(range(len(st.session_state["quiz_history"]))),
+                format_func=lambda i: f"Attempt {i + 1} — {st.session_state['quiz_history'][i]['timestamp']}"
             )
         
             quiz = st.session_state["quiz_history"][quiz_idx]
         
-            for i, r in enumerate(quiz["results"]):
-                st.markdown(f"**Q{i+1}: {r['question']}**")
-                st.markdown(f"Correct answer: **{r['correct']}**")
+            st.markdown(
+                f"**Score:** {quiz['score']}/{quiz['total']} "
+                f"({quiz['language']})"
+            )
+        
+            for i, q in enumerate(quiz["questions"]):
+                st.markdown(f"### Q{i + 1}: {q['question']}")
+        
+                for letter, text in q["options"].items():
+                    if letter == q["correct"]:
+                        st.markdown(f"- ✅ **{letter}. {text}**")
+                    elif letter == q["selected"]:
+                        st.markdown(f"- ❌ {letter}. {text}")
+                    else:
+                        st.markdown(f"- {letter}. {text}")
+        
                 st.markdown("---")
     
         elif view_mode == "Answer History":
