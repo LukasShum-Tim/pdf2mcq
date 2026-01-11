@@ -11,6 +11,7 @@ import asyncio
 import string
 import time
 import re
+import random
 
 # Set your OpenAI API key securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -28,15 +29,17 @@ if "show_generate_new" not in st.session_state:
 def select_topics_for_quiz(n):
     topic_status = st.session_state["topic_status"]
 
-    unused = [t for t, v in topic_status.items() if not v["used"]]
-    used = [t for t, v in topic_status.items() if v["used"]]
+    max_count = max(v["count"] for v in topic_status.values())
+    weights = {
+        t: (max_count + 1 - topic_status[t]["count"])
+        for t in topic_status
+    }
 
-    if len(unused) >= n:
-        return unused[:n]
-    else:
-        # Exhaust unused first, then recycle
-        return unused + used[: n - len(unused)]
-
+    return random.choices(
+        list(weights.keys()),
+        weights=list(weights.values()),
+        k=n
+    )
 def extract_text_from_pdf(file_obj):
     doc = fitz.open(stream=file_obj.read(), filetype="pdf")
     return "\n".join([page.get_text() for page in doc])
@@ -439,9 +442,9 @@ def build_quiz(preferred_topics=None):
     )
 
     for mcq in mcqs:
-        st.session_state["topic_status"][mcq["topic"]]["used"] = True
+        st.session_state["topic_status"][mcq["topic"]]["count"] += 1
         st.session_state["topic_status"][mcq["topic"]]["questions"].append(mcq)
-    
+            
     update_progress(progress, status, 35, "Tracking covered topics...")
 
     if target_language_name != "en":
@@ -490,7 +493,7 @@ if uploaded_file:
     if "topic_status" not in st.session_state:
         st.session_state["topic_status"] = {
             t: {
-                "used": False,
+                "count": 0,
                 "questions": []
             } for t in st.session_state["topics"]
         }
@@ -606,7 +609,11 @@ if st.session_state.get("translated_mcqs"):
 
     if view_mode == "Topic Coverage":
         for topic, data in st.session_state["topic_status"].items():
-            status = "✅ Covered" if data["used"] else "⏳ Not yet covered"
+            status = (
+                "⏳ Not yet asked"
+                if data["count"] == 0
+                else f"Asked {data['count']} time(s)"
+            )
             st.markdown(f"**{topic}** — {status}")
 
     elif view_mode == "Previous Questions":
