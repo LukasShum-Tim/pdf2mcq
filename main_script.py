@@ -494,7 +494,9 @@ def build_quiz():
     status.empty()
 
 # File upload
-uploaded_file = st.file_uploader(ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors."),type=["pdf"])
+uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.",type=["pdf"])
+if target_language_name != "English":
+    st.write(ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors."))
 
 if uploaded_file:
     st.success(ui("✅ PDF uploaded successfully."))
