@@ -664,14 +664,15 @@ if st.session_state.get("translated_mcqs"):
 
         #Quiz history drop-down menu
         st.markdown(ui("📂 Quiz History & Topic Coverage"))
-    
-        view_mode = st.selectbox(
-            ui("Select one of the options below:"),
-            [
-                ui("Major Topics"),
-                ui("Previous Questions"),
-            ]
-        )
+
+        with st.expander(ui("📂 View saved content")):
+            view_mode = st.selectbox(
+                ui("Select one of the options below:"),
+                [
+                    ui("Major Topics"),
+                    ui("Previous Questions"),
+                ]
+            )
     
         if view_mode.startswith("**Major Topics**") or view_mode.startswith("Major Topics"):
             for topic, data in st.session_state["topic_status"].items():
