@@ -494,7 +494,7 @@ def build_quiz():
     status.empty()
 
 # File upload
-uploaded_file = st.file_uploader(ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"]))
+uploaded_file = st.file_uploader(ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"]),type=["pdf"])
 
 if uploaded_file:
     st.success(ui("✅ PDF uploaded successfully."))
@@ -521,7 +521,7 @@ if uploaded_file:
             } for t in st.session_state["topics"]
         }
         
-    if st.button(ui("🧠 Generate Quiz")):
+    if st.button(ui("🧠 Generate Quiz"), key="quiz_button"):
         build_quiz()
 
 if st.session_state.get("translated_mcqs"):
@@ -706,7 +706,7 @@ if st.session_state.get("translated_mcqs"):
     
 #Generate new questions
 if st.session_state.get("show_generate_new"):
-    if st.button(ui("🔄 Generate New Questions")):        
+    if st.button(ui("🔄 Generate New Questions"), key="quiz_button"):        
         build_quiz()
         st.rerun()
 
