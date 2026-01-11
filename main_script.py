@@ -599,44 +599,44 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
 
-    #Quiz history drop-down menu
-    st.markdown("## 📂 Quiz History & Topic Coverage")
-
-    view_mode = st.selectbox(
-        "Select view:",
-        ["Topic Coverage", "Previous Questions", "Answer History"]
-    )
-
-    if view_mode == "Topic Coverage":
-        for topic, data in st.session_state["topic_status"].items():
-            status = (
-                "⏳ Not yet asked"
-                if data["count"] == 0
-                else f"Asked {data['count']} time(s)"
-            )
-            st.markdown(f"**{topic}** — {status}")
-
-    elif view_mode == "Previous Questions":
-        quiz_idx = st.selectbox(
-            "Select quiz attempt:",
-            range(len(st.session_state["quiz_history"])),
-            format_func=lambda i: f"Attempt {i+1}"
+        #Quiz history drop-down menu
+        st.markdown("## 📂 Quiz History & Topic Coverage")
+    
+        view_mode = st.selectbox(
+            "Select view:",
+            ["Topic Coverage", "Previous Questions", "Answer History"]
         )
     
-        quiz = st.session_state["quiz_history"][quiz_idx]
+        if view_mode == "Topic Coverage":
+            for topic, data in st.session_state["topic_status"].items():
+                status = (
+                    "⏳ Not yet asked"
+                    if data["count"] == 0
+                    else f"Asked {data['count']} time(s)"
+                )
+                st.markdown(f"**{topic}** — {status}")
     
-        for i, r in enumerate(quiz["results"]):
-            st.markdown(f"**Q{i+1}: {r['question']}**")
-            st.markdown(f"Correct answer: **{r['correct']}**")
-            st.markdown("---")
-
-    elif view_mode == "Answer History":
-        for i, quiz in enumerate(st.session_state["quiz_history"]):
-            st.markdown(
-                f"**Attempt {i+1}** — "
-                f"{quiz['score']}/{quiz['total']} "
-                f"({quiz['language']})"
+        elif view_mode == "Previous Questions":
+            quiz_idx = st.selectbox(
+                "Select quiz attempt:",
+                range(len(st.session_state["quiz_history"])),
+                format_func=lambda i: f"Attempt {i+1}"
             )
+        
+            quiz = st.session_state["quiz_history"][quiz_idx]
+        
+            for i, r in enumerate(quiz["results"]):
+                st.markdown(f"**Q{i+1}: {r['question']}**")
+                st.markdown(f"Correct answer: **{r['correct']}**")
+                st.markdown("---")
+    
+        elif view_mode == "Answer History":
+            for i, quiz in enumerate(st.session_state["quiz_history"]):
+                st.markdown(
+                    f"**Attempt {i+1}** — "
+                    f"{quiz['score']}/{quiz['total']} "
+                    f"({quiz['language']})"
+                )
 
 
 #Generate new questions
