@@ -661,78 +661,57 @@ if st.session_state.get("translated_mcqs"):
                             st.caption(f"  **EN:** {r['english_options'][letter]}")
                 st.markdown("---")
 
-
-        #Quiz history drop-down menu
+        # Quiz history drop-down menu
         st.markdown(ui("📂 Quiz History & Topic Coverage"))
-
+        
         with st.expander(
             ui("📂 View saved content"),
             expanded=st.session_state.get("show_results", False)
         ):
-            if st.button(ui("📂 View saved content")):
-                st.session_state["show_history_menu"] = not st.session_state["show_history_menu"]
-            
-            if st.session_state["show_history_menu"]:
-                view_mode = st.selectbox(
-                    ui("Choose what to view:"),
-                    [
-                        ui("Major Topics"),
-                        ui("Previous Questions"),
-                    ],
-                    key="history_view_mode"
-                )
-    
-        if view_mode.startswith("**Major Topics**") or view_mode.startswith("Major Topics"):
-            for topic, data in st.session_state["topic_status"].items():
-                if data["count"] == 0:
-                    status_text = ui("⏳ Not yet asked")
-                else:
-                    status_text = ui(f"Asked {data['count']} time(s)")
-                
-                st.markdown(f"**{topic}** — {status_text}")
-    
-        elif view_mode.startswith("**Previous Questions**") or view_mode.startswith("Previous Questions"):
-            quiz_idx = st.selectbox(
-                ui("Select quiz attempt:"),
-                list(range(len(st.session_state["quiz_history"]))),
-                format_func=lambda i: f"Attempt {i + 1} — {st.session_state['quiz_history'][i]['timestamp']}"
+            view_mode = st.selectbox(
+                ui("Choose what to view:"),
+                [
+                    ui("Major Topics"),
+                    ui("Previous Questions"),
+                ],
+                key="history_view_mode"
             )
         
-            quiz = st.session_state["quiz_history"][quiz_idx]
-            
-            bilingual_mode = target_language_code != "en"
-            
-            st.markdown(
-                f"{ui('Score')}: {quiz['score']}/{quiz['total']} "
-                f"({quiz['language_name']})"
-            )
-            
-            for i, q in enumerate(quiz["questions"]):
-                if bilingual_mode:
-                    st.markdown(f"### Q{i + 1}: {q['translated']['question']}")
-                    st.caption(f"**English:** {q['english']['question']}")
-                    options = q["translated"]["options"]
-                    english_opts = q["english"]["options"]
-                else:
-                    st.markdown(f"### Q{i + 1}: {q['english']['question']}")
-                    options = q["english"]["options"]
-                    english_opts = None
-            
-                for letter, text in options.items():
-                    if letter == q["correct"]:
-                        st.markdown(f"- ✅ **{letter}. {text}**")
-                        if bilingual_mode:
-                            st.caption(f"  **EN:** {english_opts[letter]}")
-                    elif letter == q["selected"]:
-                        st.markdown(f"- ❌ {letter}. {text}")
-                        if bilingual_mode:
-                            st.caption(f"  **EN:** {english_opts[letter]}")
+            if view_mode.startswith("Major Topics"):
+                for topic, data in st.session_state["topic_status"].items():
+                    if data["count"] == 0:
+                        status_text = ui("⏳ Not yet asked")
                     else:
-                        st.markdown(f"- {letter}. {text}")
-                        if bilingual_mode:
-                            st.caption(f"  **EN:** {english_opts[letter]}")
-            
-                st.markdown("---")
+                        status_text = ui(f"Asked {data['count']} time(s)")
+                    st.markdown(f"**{topic}** — {status_text}")
+        
+            elif view_mode.startswith("Previous Questions"):
+                quiz_idx = st.selectbox(
+                    ui("Select quiz attempt:"),
+                    list(range(len(st.session_state["quiz_history"]))),
+                    format_func=lambda i: (
+                        f"Attempt {i + 1} — "
+                        f"{st.session_state['quiz_history'][i]['timestamp']}"
+                    )
+                )
+        
+                quiz = st.session_state["quiz_history"][quiz_idx]
+        
+                st.markdown(
+                    f"{ui('Score')}: {quiz['score']}/{quiz['total']} "
+                    f"({quiz['language_name']})"
+                )
+        
+                for i, q in enumerate(quiz["questions"]):
+                    st.markdown(f"### Q{i + 1}: {q['english']['question']}")
+                    for letter, text in q["english"]["options"].items():
+                        if letter == q["correct"]:
+                            st.markdown(f"- ✅ **{letter}. {text}**")
+                        elif letter == q["selected"]:
+                            st.markdown(f"- ❌ {letter}. {text}")
+                        else:
+                            st.markdown(f"- {letter}. {text}")
+                    st.markdown("---")
 
     
 #Generate new questions
