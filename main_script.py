@@ -420,7 +420,7 @@ target_language_code = language_map[target_language_name]
 st.session_state["target_language_code"] = target_language_code
 
 #Building the quiz
-def build_quiz(preferred_topics=None):
+def build_quiz():
     progress = st.progress(0)
     status = st.empty()
 
@@ -641,13 +641,8 @@ if st.session_state.get("translated_mcqs"):
 
 #Generate new questions
 if st.session_state.get("show_generate_new"):
-    if st.button("🔄 Generate New Questions"):
-        remaining = [
-            t for t, v in st.session_state["topic_status"].items()
-            if not v["used"]
-        ]
-        
-        build_quiz(preferred_topics=remaining if remaining else None)
+    if st.button("🔄 Generate New Questions"):        
+        build_quiz()
         st.rerun()
 
 #Feedback Form
