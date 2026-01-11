@@ -279,8 +279,13 @@ def ui(text):
     """
     if st.session_state.get("target_language_code", "en") == "en":
         return text
+
     translated = translate_ui_text(text, st.session_state["target_language_code"])
-    return f"**{text}**  \n*{translated}*"
+
+    if translated and translated != text:
+        return f"{text} — {translated}"
+
+    return text
 
 # -------- Quiz Scoring --------
 
@@ -432,7 +437,7 @@ language_map = {
     'Zulu': 'zu',
 }
 language_options = list(language_map.keys())
-target_language_name = st.selectbox("Translate quiz to:", language_options, index=0)
+target_language_name = st.selectbox(ui("Translate quiz to:"), language_options, index=0)
 target_language_code = language_map[target_language_name]
 st.session_state["target_language_code"] = target_language_code
 
@@ -489,10 +494,10 @@ def build_quiz():
     status.empty()
 
 # File upload
-uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"])
+uploaded_file = st.file_uploader(ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.", type=["pdf"]))
 
 if uploaded_file:
-    st.success("✅ PDF uploaded successfully.")
+    st.success(ui("✅ PDF uploaded successfully."))
     extracted_text = extract_text_from_pdf(uploaded_file)
     st.session_state["extracted_text"] = extracted_text
 
@@ -641,7 +646,7 @@ if st.session_state.get("translated_mcqs"):
         view_mode = st.selectbox(
             ui("Select one of the options below:"),
             [
-                ui("Topic Coverage"),
+                ui("Major Topics"),
                 ui("Previous Questions"),
             ]
         )
