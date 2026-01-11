@@ -664,10 +664,8 @@ if st.session_state.get("translated_mcqs"):
         # Quiz history drop-down menu
         st.markdown(ui("📂 Quiz History & Topic Coverage"))
         
-        with st.expander(
-            ui("📂 View saved content"),
-            expanded=st.session_state.get("show_results", False)
-        ):
+        with st.expander(ui("📂 View saved content")):
+        #with st.expander(ui("📂 View saved content"), expanded=st.session_state.get("show_results", False)):
             view_mode = st.selectbox(
                 ui("Choose what to view:"),
                 [
@@ -689,31 +687,45 @@ if st.session_state.get("translated_mcqs"):
                 quiz_idx = st.selectbox(
                     ui("Select quiz attempt:"),
                     list(range(len(st.session_state["quiz_history"]))),
-                    format_func=lambda i: (
-                        f"Attempt {i + 1} — "
-                        f"{st.session_state['quiz_history'][i]['timestamp']}"
-                    )
+                    format_func=lambda i: f"Attempt {i + 1} — {st.session_state['quiz_history'][i]['timestamp']}"
                 )
-        
+            
                 quiz = st.session_state["quiz_history"][quiz_idx]
-        
+                
+                bilingual_mode = target_language_code != "en"
+                
                 st.markdown(
                     f"{ui('Score')}: {quiz['score']}/{quiz['total']} "
                     f"({quiz['language_name']})"
                 )
-        
+                
                 for i, q in enumerate(quiz["questions"]):
-                    st.markdown(f"### Q{i + 1}: {q['english']['question']}")
-                    for letter, text in q["english"]["options"].items():
+                    if bilingual_mode:
+                        st.markdown(f"### Q{i + 1}: {q['translated']['question']}")
+                        st.caption(f"**English:** {q['english']['question']}")
+                        options = q["translated"]["options"]
+                        english_opts = q["english"]["options"]
+                    else:
+                        st.markdown(f"### Q{i + 1}: {q['english']['question']}")
+                        options = q["english"]["options"]
+                        english_opts = None
+                
+                    for letter, text in options.items():
                         if letter == q["correct"]:
                             st.markdown(f"- ✅ **{letter}. {text}**")
+                            if bilingual_mode:
+                                st.caption(f"  **EN:** {english_opts[letter]}")
                         elif letter == q["selected"]:
                             st.markdown(f"- ❌ {letter}. {text}")
+                            if bilingual_mode:
+                                st.caption(f"  **EN:** {english_opts[letter]}")
                         else:
                             st.markdown(f"- {letter}. {text}")
+                            if bilingual_mode:
+                                st.caption(f"  **EN:** {english_opts[letter]}")
+                
                     st.markdown("---")
-
-    
+        
 #Generate new questions
 if st.session_state.get("show_generate_new"):
     if st.button(ui("🔄 Generate New Questions")):        
