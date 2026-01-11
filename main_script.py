@@ -613,8 +613,9 @@ if st.session_state.get("translated_mcqs"):
         
         # Prevent duplicate save on reruns
         if not st.session_state.get("quiz_saved", False):
+            t = time.localtime()
             st.session_state["quiz_history"].append({
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", t),
                 "language_name": st.session_state["target_language_code"],
                 "language_code": target_language_code,
                 "score": score,
@@ -662,10 +663,7 @@ if st.session_state.get("translated_mcqs"):
                 st.markdown("---")
 
         # Quiz history drop-down menu
-        st.markdown(ui("📂 Quiz History & Topic Coverage"))
-        
-        with st.expander(ui("📂 View saved content")):
-        #with st.expander(ui("📂 View saved content"), expanded=st.session_state.get("show_results", False)):
+        with st.expander(ui("📂 Quiz History & Topic Coverage")):
             view_mode = st.selectbox(
                 ui("Choose what to view:"),
                 [
