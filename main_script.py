@@ -25,6 +25,18 @@ if "show_generate_new" not in st.session_state:
 
 # -------- PDF & Text Utilities --------
 
+def select_topics_for_quiz(n):
+    topic_status = st.session_state["topic_status"]
+
+    unused = [t for t, v in topic_status.items() if not v["used"]]
+    used = [t for t, v in topic_status.items() if v["used"]]
+
+    if len(unused) >= n:
+        return unused[:n]
+    else:
+        # Exhaust unused first, then recycle
+        return unused + used[: n - len(unused)]
+
 def extract_text_from_pdf(file_obj):
     doc = fitz.open(stream=file_obj.read(), filetype="pdf")
     return "\n".join([page.get_text() for page in doc])
@@ -106,7 +118,7 @@ def update_progress(progress, status, value, message):
     progress.progress(value)
     status.markdown(f"⏳ **{message}**")
 
-def generate_mcqs(text, total_questions=5, preferred_topics=None, seed_token=None):
+def generate_mcqs(text, topics, seed_token=None):
     topic_instruction = ""
     seed_token = seed_token or str(time.time())
     if preferred_topics:
@@ -117,11 +129,11 @@ Avoid repeating previously used topics if possible.
 """
 
     seed_text = f"\n\nSeed token: {seed_token}" if seed_token else ""
+    topic_block = "\n".join([f"- {t}" for t in topics])
     
     prompt = f"""
 You are a helpful assistant who generates clinically relevant multiple-choice questions (MCQs) strictly based on the provided text.
 Make the questions clinically relevant to target an audience of medical students and residents, Royal College of Physicians and Surgeons of Canada style.
-Ensure the questions are **proportional across the manual**, covering all major topics.
 Focus on clinical relevance, and if surgical content exists, include surgical presentation, approach, and management.
 Do NOT write specific questions on case details, such as asking about a patient's blood pressure.
 If the text refers to case numbers, do not add that information in the question stems.
@@ -130,7 +142,14 @@ If the text refers to case numbers, do not add that information in the question 
 Each question MUST be tagged with ONE main topic.
 {seed_text}
 
-Generate exactly {total_questions} MCQs in this JSON format ONLY:
+You MUST generate exactly {total_questions} MCQs, with exactly ONE MCQ per topic listed below.
+Each question must focus ONLY on its assigned topic.
+Do NOT repeat concepts across questions.
+
+TOPICS:
+{topic_block}
+
+The {total_questions} MCQs you generated MUST be exactly be in this JSON format ONLY:
 {{
   "mcqs": [
     {{
@@ -418,12 +437,18 @@ def build_quiz(preferred_topics=None):
     
     update_progress(progress, status, 15, "Generating questions with AI...")
     
+    selected_topics = select_topics_for_quiz(st.session_state["total_questions"])
+    
     mcqs = generate_mcqs(
         st.session_state["extracted_text"],
-        total_questions=st.session_state["total_questions"],
-        preferred_topics=preferred_topics,
+        topics=selected_topics,
         seed_token=str(time.time())
     )
+
+    for mcq in mcqs:
+        st.session_state["topic_status"][mcq["topic"]]["used"] = True
+        st.session_state["topic_status"][mcq["topic"]]["questions"].append(mcq)
+    
     update_progress(progress, status, 35, "Tracking covered topics...")
     
     for mcq in mcqs:
@@ -473,6 +498,14 @@ if uploaded_file:
         st.session_state["topics"] = extract_topics(extracted_text)
         st.session_state["used_topics"] = set()
 
+    if "topic_status" not in st.session_state:
+    st.session_state["topic_status"] = {
+        t: {
+            "used": False,
+            "questions": []
+        } for t in st.session_state["topics"]
+    }
+    
     if st.button("🧠 Generate Quiz"):
         build_quiz()
 
@@ -561,6 +594,53 @@ if st.session_state.get("translated_mcqs"):
                             st.caption(f"  **EN:** {r['english_options'][letter]}")
                 st.markdown("---")
 
+    #Question history
+    if "quiz_history" not in st.session_state:
+        st.session_state["quiz_history"] = []
+
+    st.session_state["quiz_history"].append({
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "language": target_language_name,
+        "score": score,
+        "total": len(results),
+        "results": results
+    })
+
+    st.markdown("## 📂 Quiz History & Topic Coverage")
+
+    view_mode = st.selectbox(
+        "Select view:",
+        ["Topic Coverage", "Previous Questions", "Answer History"]
+    )
+
+    if view_mode == "Topic Coverage":
+        for topic, data in st.session_state["topic_status"].items():
+            status = "✅ Covered" if data["used"] else "⏳ Not yet covered"
+            st.markdown(f"**{topic}** — {status}")
+
+    elif view_mode == "Previous Questions":
+        quiz_idx = st.selectbox(
+            "Select quiz attempt:",
+            range(len(st.session_state["quiz_history"])),
+            format_func=lambda i: f"Attempt {i+1}"
+        )
+    
+        quiz = st.session_state["quiz_history"][quiz_idx]
+    
+        for i, r in enumerate(quiz["results"]):
+            st.markdown(f"**Q{i+1}: {r['question']}**")
+            st.markdown(f"Correct answer: **{r['correct']}**")
+            st.markdown("---")
+
+    elif view_mode == "Answer History":
+        for i, quiz in enumerate(st.session_state["quiz_history"]):
+            st.markdown(
+                f"**Attempt {i+1}** — "
+                f"{quiz['score']}/{quiz['total']} "
+                f"({quiz['language']})"
+            )
+
+
 #Generate new questions
 if st.session_state.get("show_generate_new"):
     if st.button("🔄 Generate New Questions"):
@@ -570,6 +650,7 @@ if st.session_state.get("show_generate_new"):
         build_quiz(preferred_topics=remaining if remaining else None)
         st.rerun()
 
+#Feedback Form
     url_instructors = "https://forms.gle/GdMqpvikomBRTcvJ6"
     url_students = "https://forms.gle/CWKRqptQhpdLKaj8A"
 
