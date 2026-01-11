@@ -26,9 +26,6 @@ if "show_generate_new" not in st.session_state:
 
 # -------- PDF & Text Utilities --------
 
-LANG_CODE = st.session_state.get("target_language_code", "en")
-BILINGUAL = LANG_CODE != "en"
-
 def select_topics_for_quiz(n):
     topic_status = st.session_state["topic_status"]
 
