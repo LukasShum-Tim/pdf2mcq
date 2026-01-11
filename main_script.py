@@ -521,7 +521,7 @@ if uploaded_file:
             } for t in st.session_state["topics"]
         }
         
-    if st.button(ui("🧠 Generate Quiz"), key="quiz_button"):
+    if st.button(ui("🧠 Generate Quiz")):
         build_quiz()
 
 if st.session_state.get("translated_mcqs"):
@@ -706,7 +706,7 @@ if st.session_state.get("translated_mcqs"):
     
 #Generate new questions
 if st.session_state.get("show_generate_new"):
-    if st.button(ui("🔄 Generate New Questions"), key="quiz_button"):        
+    if st.button(ui("🔄 Generate New Questions")):        
         build_quiz()
         st.rerun()
 
