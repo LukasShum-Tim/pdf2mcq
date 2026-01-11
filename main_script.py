@@ -26,6 +26,9 @@ if "show_generate_new" not in st.session_state:
 
 # -------- PDF & Text Utilities --------
 
+LANG_CODE = st.session_state.get("target_language_code", "en")
+BILINGUAL = LANG_CODE != "en"
+
 def select_topics_for_quiz(n):
     topic_status = st.session_state["topic_status"]
 
@@ -470,7 +473,7 @@ def build_quiz():
             
     update_progress(progress, status, 35, "Tracking covered topics...")
 
-    if target_language_name != "en":
+    if st.session_state["target_language_code"] != "en":
         update_progress(progress, status, 55, "Translating questions...")
             
     translated = translate_mcqs(mcqs, st.session_state["target_language_code"])
@@ -494,13 +497,22 @@ def build_quiz():
     status.empty()
 
 # File upload
-uploaded_file = st.file_uploader("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors.",type=["pdf"])
-if target_language_name != "English":
-    st.write(ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors."))
+uploaded_file = st.file_uploader(
+    ui("📤 Upload your PDF file. If using a mobile device, please make sure the PDF file is stored on your local drive, and not imported from a cloud drive to prevent upload errors."),
+    type=["pdf"],
+    key="pdf_uploader"
+)
 
 if uploaded_file:
+    st.session_state["pdf_changed"] = True
+
+if "pdf_bytes" in st.session_state:
+    extracted_text = extract_text_from_pdf(
+        io.BytesIO(st.session_state["pdf_bytes"])
+    )
+    st.session_state["extracted_text"] = extracted_text
+    st.session_state["pdf_bytes"] = uploaded_file.getvalue()
     st.success(ui("✅ PDF uploaded successfully."))
-    extracted_text = extract_text_from_pdf(uploaded_file)
     st.session_state["extracted_text"] = extracted_text
 
     with st.expander(ui("🔍 Preview Extracted Text")):
@@ -512,8 +524,13 @@ if uploaded_file:
         key="total_questions"
     )
     
-    if "topics" not in st.session_state:
-        st.session_state["topics"] = extract_topics(extracted_text)
+    if "topics" not in st.session_state or st.session_state.get("pdf_changed"):
+        st.session_state["topics"] = extract_topics(st.session_state["extracted_text"])
+        st.session_state["topic_status"] = {
+            t: {"count": 0, "questions": []}
+            for t in st.session_state["topics"]
+        }
+        st.session_state["pdf_changed"] = False
     
     if "topic_status" not in st.session_state:
         st.session_state["topic_status"] = {
@@ -531,7 +548,7 @@ if st.session_state.get("translated_mcqs"):
     original_mcqs = st.session_state["original_mcqs"]
     user_answers = []
 
-    bilingual_mode = target_language_name != "English"
+    bilingual_mode = st.session_state["target_language_code"] != "English"
 
     with st.form(f"quiz_form_{st.session_state['quiz_version']}"):
         st.header(ui("📝 Take the Quiz"))
@@ -595,7 +612,7 @@ if st.session_state.get("translated_mcqs"):
         if not st.session_state.get("quiz_saved", False):
             st.session_state["quiz_history"].append({
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "language_name": target_language_name,
+                "language_name": st.session_state["target_language_code"],
                 "language_code": target_language_code,
                 "score": score,
                 "total": len(results),
