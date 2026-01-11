@@ -499,13 +499,13 @@ if uploaded_file:
         st.session_state["used_topics"] = set()
 
     if "topic_status" not in st.session_state:
-    st.session_state["topic_status"] = {
-        t: {
-            "used": False,
-            "questions": []
-        } for t in st.session_state["topics"]
-    }
-    
+        st.session_state["topic_status"] = {
+            t: {
+                "used": False,
+                "questions": []
+            } for t in st.session_state["topics"]
+        }
+        
     if st.button("🧠 Generate Quiz"):
         build_quiz()
 
