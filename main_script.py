@@ -119,7 +119,7 @@ def shuffle_mcqs_pairwise(mcqs, translated_mcqs):
 
 def update_progress(progress, status, value, message):
     progress.progress(value)
-    status.markdown(f"⏳ **{message}**")
+    status.markdown(f"⏳ **{ui(message)}**")
 
 def generate_mcqs(text, topics, seed_token=None):
     seed_token = seed_token or str(time.time())
@@ -263,7 +263,24 @@ def translate_mcqs(mcqs, language_code):
             st.error(f"❌ Google Translate failed: {ge}")
             return mcqs
 
+@st.cache_data(show_spinner=False)
+def translate_ui_text(text, language_code):
+    """Translate UI strings with caching."""
+    if language_code == "en":
+        return text
+    translated = translate_text_gpt(text, language_code)
+    return translated if translated else text
 
+def ui(text):
+    """
+    Returns bilingual UI text:
+    English
+    Translated (if applicable)
+    """
+    if st.session_state.get("target_language_code", "en") == "en":
+        return text
+    translated = translate_ui_text(text, st.session_state["target_language_code"])
+    return f"**{text}**  \n*{translated}*"
 
 # -------- Quiz Scoring --------
 
@@ -499,7 +516,7 @@ if uploaded_file:
             } for t in st.session_state["topics"]
         }
         
-    if st.button("🧠 Generate Quiz"):
+    if st.button(ui("🧠 Generate Quiz")):
         build_quiz()
 
 if st.session_state.get("translated_mcqs"):
@@ -510,7 +527,7 @@ if st.session_state.get("translated_mcqs"):
     bilingual_mode = target_language_name != "English"
 
     with st.form(f"quiz_form_{st.session_state['quiz_version']}"):
-        st.header("📝 Take the Quiz")
+        st.header(ui("📝 Take the Quiz"))
 
         for idx, mcq in enumerate(translated_mcqs):
             if bilingual_mode:
@@ -548,7 +565,7 @@ if st.session_state.get("translated_mcqs"):
             user_answers.append(selected_letter)
             st.markdown("---")
 
-        submitted = st.form_submit_button("✅ Submit Quiz")
+        submitted = st.form_submit_button(ui("✅ Submit Quiz"))
 
 
     if submitted:
@@ -587,7 +604,7 @@ if st.session_state.get("translated_mcqs"):
             st.session_state["quiz_saved"] = True
         
         # -------- Feedback section --------
-        with st.expander("📊 View Detailed Feedback"):
+        with st.expander(ui("📊 View Detailed Feedback")):
             for i, r in enumerate(results):
                 if bilingual_mode:
                     st.markdown(f"### Q{i+1}: {r['question']}")
@@ -612,25 +629,29 @@ if st.session_state.get("translated_mcqs"):
 
 
         #Quiz history drop-down menu
-        st.markdown("## 📂 Quiz History & Topic Coverage")
+        st.markdown(ui("## 📂 Quiz History & Topic Coverage"))
     
         view_mode = st.selectbox(
-            "Select view:",
-            ["Topic Coverage", "Previous Questions", "Answer History"]
+            ui("Select view:"),
+            [
+                ui("Topic Coverage"),
+                ui("Previous Questions"),
+                ui("Answer History")
+            ]
         )
     
-        if view_mode == "Topic Coverage":
+        if view_mode.startswith("**Topic Coverage**") or view_mode.startswith("Topic Coverage"):
             for topic, data in st.session_state["topic_status"].items():
-                status = (
-                    "⏳ Not yet asked"
-                    if data["count"] == 0
-                    else f"Asked {data['count']} time(s)"
-                )
-                st.markdown(f"**{topic}** — {status}")
+                if data["count"] == 0:
+                    status_text = ui("⏳ Not yet asked")
+                else:
+                    status_text = ui(f"Asked {data['count']} time(s)")
+                
+                st.markdown(f"**{topic}** — {status_text}")
     
-        elif view_mode == "Previous Questions":
+        elif view_mode.startswith("**Previous Questions**") or view_mode.startswith("Previous Questions"):
             quiz_idx = st.selectbox(
-                "Select quiz attempt:",
+                ui("Select quiz attempt:"),
                 list(range(len(st.session_state["quiz_history"]))),
                 format_func=lambda i: f"Attempt {i + 1} — {st.session_state['quiz_history'][i]['timestamp']}"
             )
@@ -638,7 +659,7 @@ if st.session_state.get("translated_mcqs"):
             quiz = st.session_state["quiz_history"][quiz_idx]
         
             st.markdown(
-                f"**Score:** {quiz['score']}/{quiz['total']} "
+                f"{ui('Score')}: {quiz['score']}/{quiz['total']} "
                 f"({quiz['language']})"
             )
         
@@ -655,18 +676,9 @@ if st.session_state.get("translated_mcqs"):
         
                 st.markdown("---")
     
-        elif view_mode == "Answer History":
-            for i, quiz in enumerate(st.session_state["quiz_history"]):
-                st.markdown(
-                    f"**Attempt {i+1}** — "
-                    f"{quiz['score']}/{quiz['total']} "
-                    f"({quiz['language']})"
-                )
-
-
 #Generate new questions
 if st.session_state.get("show_generate_new"):
-    if st.button("🔄 Generate New Questions"):        
+    if st.button(ui("🔄 Generate New Questions")):        
         build_quiz()
         st.rerun()
 
@@ -674,7 +686,7 @@ if st.session_state.get("show_generate_new"):
     url_instructors = "https://forms.gle/GdMqpvikomBRTcvJ6"
     url_students = "https://forms.gle/CWKRqptQhpdLKaj8A"
 
-    st.markdown("### 📝 Help Us Improve")
+    st.markdown(ui("### 📝 Help Us Improve"))
     # Show translation only if non-English
     if target_language_code != "en":
         translated_feedback = translate_text_gpt(
