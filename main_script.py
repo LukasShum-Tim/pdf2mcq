@@ -194,7 +194,7 @@ TEXT:
 
 # -------- Translation (GPT + Google Fallback) --------
 
-def translate_text_gpt(text, language_name):
+def translate_text_gpt(text, target_language_name):
     """Translate plain text using GPT, output as simple text."""
     try:
         # Include both name and code to ensure clarity for the model
@@ -284,7 +284,7 @@ def translate_mcqs(mcqs, language_name):
             return mcqs
 
 @st.cache_data(show_spinner=False)
-def translate_ui_text(text, language_code):
+def translate_ui_text(text, target_lang_name):
     """Translate UI strings with caching."""
     if language_name == "English":
         return text
