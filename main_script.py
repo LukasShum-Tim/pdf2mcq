@@ -208,7 +208,7 @@ def translate_text_gpt(text, language_name):
         - Preserve correct medical terminology and meaning
         
         TASK:
-        Translate the following text into {target_language_name}. Do NOT include explanations, only the translation:
+        Translate the following text into {language_name}. Do NOT include explanations, only the translation:
         
         {text}
         """
@@ -277,7 +277,7 @@ def translate_mcqs(mcqs, language_name):
         st.warning(f"⚠️ GPT translation failed: {e}")
         st.info("🔁 Falling back to Google Translate...")
         try:
-            translated_mcqs = asyncio.run(translate_with_google(mcqs, language_code))
+            translated_mcqs = asyncio.run(translate_with_google(mcqs, st.session_state["target_language_code"]))
             return translated_mcqs
         except Exception as ge:
             st.error(f"❌ Google Translate failed: {ge}")
@@ -286,9 +286,9 @@ def translate_mcqs(mcqs, language_name):
 @st.cache_data(show_spinner=False)
 def translate_ui_text(text, language_code):
     """Translate UI strings with caching."""
-    if language_code == "en":
+    if language_name == "English":
         return text
-    translated = translate_text_gpt(text, language_code)
+    translated = translate_text_gpt(text, language_name)
     return translated if translated else text
 
 def ui(text):
