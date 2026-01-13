@@ -198,7 +198,23 @@ def translate_text_gpt(text, language_code):
     """Translate plain text using GPT, output as simple text."""
     try:
         # Include both name and code to ensure clarity for the model
-        prompt = f"Translate the following text into the language corresponding to code '{language_code}'. Do not include explanations, only the translation:\n\n{text}"
+        prompt = f"""
+        ROLE:
+        You are a helpful multilingual medical educator who translates text into a target language with precise medical accuracy.
+        
+        RULES:
+        - The translation MUST be appropriate for residents, physicians, and surgeons
+        - Do NOT translate word-for-word
+        - Preserve correct medical terminology and meaning
+        
+        TASK:
+        Translate the following text into {target_language_code}. Do NOT include explanations, only the translation:
+        
+        {text}
+        """
+
+
+        
         response = client.chat.completions.create(
             model="gpt-4.1-mini-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
