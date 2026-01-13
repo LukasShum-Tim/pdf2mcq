@@ -208,7 +208,7 @@ def translate_text_gpt(text, target_language_name):
         - Preserve correct medical terminology and meaning
         
         TASK:
-        Translate the following text into {language_name}. Do NOT include explanations, only the translation:
+        Translate the following text into {target_language_name}. Do NOT include explanations, only the translation:
         
         {text}
         """
@@ -245,7 +245,7 @@ async def translate_with_google(mcqs, language_code):
     return translated_mcqs
 
 
-def translate_mcqs(mcqs, language_name):
+def translate_mcqs(mcqs, language_name, language_code):
     """Translate all MCQs using GPT, with Google fallback."""
     if target_language_code == "en":
         return mcqs
@@ -286,7 +286,7 @@ def translate_mcqs(mcqs, language_name):
 @st.cache_data(show_spinner=False)
 def translate_ui_text(text, target_lang_name):
     """Translate UI strings with caching."""
-    if language_name == "English":
+    if target_lang_name == "English":
         return text
     translated = translate_text_gpt(text, language_name)
     return translated if translated else text
@@ -499,7 +499,7 @@ def build_quiz():
     if st.session_state["target_language_code"] != "en":
         update_progress(progress, status, 55, "Translating questions...")
             
-    translated = translate_mcqs(mcqs, st.session_state["target_language_name"])
+    translated = translate_mcqs(mcqs, st.session_state["target_language_name"],st.session_state["target_language_code"])
 
     update_progress(progress, status, 75, "Shuffling answer choices...")
     
