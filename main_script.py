@@ -194,7 +194,7 @@ TEXT:
 
 # -------- Translation (GPT + Google Fallback) --------
 
-def translate_text_gpt(text, language_code):
+def translate_text_gpt(text, language_name):
     """Translate plain text using GPT, output as simple text."""
     try:
         # Include both name and code to ensure clarity for the model
@@ -208,7 +208,7 @@ def translate_text_gpt(text, language_code):
         - Preserve correct medical terminology and meaning
         
         TASK:
-        Translate the following text into {target_language_code}. Do NOT include explanations, only the translation:
+        Translate the following text into {target_language_name}. Do NOT include explanations, only the translation:
         
         {text}
         """
@@ -245,7 +245,7 @@ async def translate_with_google(mcqs, language_code):
     return translated_mcqs
 
 
-def translate_mcqs(mcqs, language_code):
+def translate_mcqs(mcqs, language_name):
     """Translate all MCQs using GPT, with Google fallback."""
     if language_code == "en":
         return mcqs
@@ -254,13 +254,13 @@ def translate_mcqs(mcqs, language_code):
 
     try:
         for mcq in mcqs:
-            question_translated = translate_text_gpt(mcq["question"], language_code)
+            question_translated = translate_text_gpt(mcq["question"], language_name)
             if not question_translated:
                 raise ValueError("Empty GPT translation")
 
             translated_options = {}
             for k, v in mcq["options"].items():
-                option_translated = translate_text_gpt(v, language_code)
+                option_translated = translate_text_gpt(v, language_name)
                 if not option_translated:
                     raise ValueError("Empty GPT translation for option")
                 translated_options[k] = option_translated
@@ -300,7 +300,7 @@ def ui(text):
     if st.session_state.get("target_language_code", "en") == "en":
         return text
 
-    translated = translate_ui_text(text, st.session_state["target_language_code"])
+    translated = translate_ui_text(text, st.session_state["target_language_name"])
 
     if translated and translated != text:
         return f"{text} — {translated}"
@@ -465,6 +465,7 @@ target_language_name = st.selectbox(
 )
 target_language_code = language_map[target_language_name]
 st.session_state["target_language_code"] = target_language_code
+st.session_state["target_language_name"] = target_language_name 
 
 #Building the quiz
 def build_quiz():
@@ -498,7 +499,7 @@ def build_quiz():
     if st.session_state["target_language_code"] != "en":
         update_progress(progress, status, 55, "Translating questions...")
             
-    translated = translate_mcqs(mcqs, st.session_state["target_language_code"])
+    translated = translate_mcqs(mcqs, st.session_state["target_language_name"])
 
     update_progress(progress, status, 75, "Shuffling answer choices...")
     
@@ -631,8 +632,8 @@ if st.session_state.get("translated_mcqs"):
         if not st.session_state.get("quiz_saved", False):
             st.session_state["quiz_history"].append({
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "language_name": st.session_state["target_language_code"],
-                "language_code": target_language_code,
+                "language_name": st.session_state["target_language_name"],
+                "language_name": target_language_name,
                 "score": score,
                 "total": len(results),
                 "questions": [
@@ -754,7 +755,7 @@ if st.session_state.get("show_generate_new"):
     if target_language_code != "en":
         translated_feedback = translate_text_gpt(
             "Help us improve",
-            target_language_code
+            target_language_name
         )
         if translated_feedback:
             st.write(f"**{translated_feedback}**")
@@ -773,7 +774,7 @@ if st.session_state.get("show_generate_new"):
     if target_language_code != "en":
         translated_feedback = translate_text_gpt(
             feedback_text_en,
-            target_language_code
+            target_language_name
         )
         if translated_feedback:
             st.write(translated_feedback)
@@ -786,7 +787,7 @@ if st.session_state.get("show_generate_new"):
         st.caption(
             translate_text_gpt(
                 feedback_instructors_en,
-                target_language_code
+                target_language_name
             )
         )
     st.markdown(url_instructors)
@@ -797,7 +798,7 @@ if st.session_state.get("show_generate_new"):
         st.caption(
             translate_text_gpt(
                 feedback_students_en,
-                target_language_code
+                target_language_name
             )
         )
     st.markdown(url_students)
