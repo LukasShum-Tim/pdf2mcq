@@ -247,7 +247,7 @@ async def translate_with_google(mcqs, language_code):
 
 def translate_mcqs(mcqs, language_name):
     """Translate all MCQs using GPT, with Google fallback."""
-    if language_code == "en":
+    if target_language_code == "en":
         return mcqs
 
     translated_mcqs = []
