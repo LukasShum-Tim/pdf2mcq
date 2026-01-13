@@ -212,9 +212,6 @@ def translate_text_gpt(text, target_language_name):
         
         {text}
         """
-
-
-        
         response = client.chat.completions.create(
             model="gpt-4.1-mini-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
@@ -288,8 +285,9 @@ def translate_ui_text(text, target_lang_name):
     """Translate UI strings with caching."""
     if target_lang_name == "English":
         return text
-    translated = translate_text_gpt(text, target_lang_name)
-    return translated if translated else text
+    else:
+        translated = translate_text_gpt(text, target_lang_name)
+        return translated if translated else text
 
 def ui(text):
     """
