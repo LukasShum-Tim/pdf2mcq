@@ -247,7 +247,7 @@ async def translate_with_google(mcqs, language_code):
 
 def translate_mcqs(mcqs, language_name, language_code):
     """Translate all MCQs using GPT, with Google fallback."""
-    if target_language_code == "en":
+    if language_code == "en":
         return mcqs
 
     translated_mcqs = []
@@ -288,7 +288,7 @@ def translate_ui_text(text, target_lang_name):
     """Translate UI strings with caching."""
     if target_lang_name == "English":
         return text
-    translated = translate_text_gpt(text, language_name)
+    translated = translate_text_gpt(text, target_lang_name)
     return translated if translated else text
 
 def ui(text):
