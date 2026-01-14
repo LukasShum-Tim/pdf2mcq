@@ -608,7 +608,7 @@ if st.session_state.get("translated_mcqs"):
                 if selected_text is None:
                     selected_letter = None
                 else:
-                    selected_letter = next(k for k, v in options.items() if v == selected_text)
+                    selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
 
             user_answers.append(selected_letter)
             st.markdown("---")
