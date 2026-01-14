@@ -593,7 +593,10 @@ if st.session_state.get("translated_mcqs"):
                     index=None,
                     key=f"q_{st.session_state['quiz_version']}_{idx}"
                 )
-                selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
+                if selected_text is None:
+                    selected_letter = None
+                else:
+                    selected_letter = next(k for k, v in options.items() if v == selected_text)
             else:
                 ordered_options = [options[k] for k in ordered_keys]
                 selected_text = st.radio(
@@ -602,9 +605,10 @@ if st.session_state.get("translated_mcqs"):
                     index=None,
                     key=f"q_{st.session_state['quiz_version']}_{idx}"
                 )
-                selected_letter = next(
-                    k for k, v in options.items() if v == selected_text
-                )
+                if selected_text is None:
+                    selected_letter = None
+                else:
+                    selected_letter = next(k for k, v in options.items() if v == selected_text)
 
             user_answers.append(selected_letter)
             st.markdown("---")
