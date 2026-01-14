@@ -613,7 +613,7 @@ if st.session_state.get("translated_mcqs"):
             user_answers.append(selected_letter)
             st.markdown("---")
 
-        submitted = st.form_submit_button(ui("✅ Submit Quiz"),disabled=any(a is None for a in user_answers))
+        submitted = st.form_submit_button(ui("✅ Submit Quiz"))
 
 
     if submitted:
