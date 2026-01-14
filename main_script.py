@@ -596,7 +596,8 @@ if st.session_state.get("translated_mcqs"):
                 if selected_text is None:
                     selected_letter = None
                 else:
-                    selected_letter = next(k for k, v in options.items() if v == selected_text)
+                    selected_idx = bilingual_opts.index(selected_text)
+                    selected_letter = ordered_keys[selected_idx]
             else:
                 ordered_options = [options[k] for k in ordered_keys]
                 selected_text = st.radio(
