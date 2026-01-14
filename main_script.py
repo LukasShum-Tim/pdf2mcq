@@ -608,17 +608,20 @@ if st.session_state.get("translated_mcqs"):
                 if selected_text is None:
                     selected_letter = None
                 else:
-                    selected_letter = ordered_keys[bilingual_opts.index(selected_text)]
+                    selected_letter = next(k for k, v in options.items() if v == selected_text)
 
             user_answers.append(selected_letter)
             st.markdown("---")
 
-        submitted = st.form_submit_button(ui("✅ Submit Quiz"))
+        submitted = st.form_submit_button(ui("✅ Submit Quiz"),disabled=any(a is None for a in user_answers))
 
 
     if submitted:
-        st.session_state["show_results"] = True
-        st.session_state["show_generate_new"] = True
+        if any(a is None for a in user_answers):
+            st.warning(ui("⚠️ Please answer all questions before submitting."))
+        else:
+            st.session_state["show_results"] = True
+            st.session_state["show_generate_new"] = True
 
     if st.session_state.get("show_results"):
         score, results = score_quiz(
