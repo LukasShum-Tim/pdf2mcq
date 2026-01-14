@@ -598,6 +598,7 @@ if st.session_state.get("translated_mcqs"):
                 selected_text = st.radio(
                     "Choose an answer:",
                     ordered_options,
+                    index=None,
                     key=f"q_{st.session_state['quiz_version']}_{idx}"
                 )
                 selected_letter = next(
